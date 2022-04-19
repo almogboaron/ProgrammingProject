@@ -5,6 +5,7 @@
 
 
 //Declorations
+
 int *Centroids;
 int **CenetroidAloc;
 int *data;
