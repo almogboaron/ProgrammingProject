@@ -5,24 +5,34 @@
 
 
 //Declorations
-
+int K;
+char* filename;
+int max_iter;
+int n;
+int d;
 int *Centroids;
 int **CenetroidAloc;
 int *data;
 int **dataAloc;
+int *clusters;
+int **clustersAloc;
+double EPSILON = 0.001;
+
+
 
 
 //Function Initalizeation Centroids -> Matrix Formation as first k data points 
 void Init_Centroids(int k , int d){
-    centroids = calloc(k*d,sizeof(float));
-    centroidAloc = calloc(k,sizof(int));
+    Centroids = calloc(k*d,sizeof(float));
+    CenetroidAloc = calloc(k,sizeof(int));
     //Initializing Centroids Mat
-    for( i=0 ; i<k*d ;i++){
-        centroids[i] = data[i];
+    int i;
+    for(i=0 ; i<k*d ;i++){
+        Centroids[i] = data[i];
     }
     //Initializing Pointer to Centroids Mat (k*d)
-    for( i=0 , i<k , i++){
-        centroidAloc[i] = centroids + i*d ; 
+    for(i=0; i < k ; i++){
+        CenetroidAloc[i] = Centroids + i*d ;
     }
 }
 
@@ -31,14 +41,14 @@ void init_DataMat( char *filename ,int n , int d){
     float a;
     int i=0;
     int j=0;
-    *char line , number ;
+    char line , number ;
     
     //Call location
     data = calloc(n*d,sizeof(float));
     dataAloc = calloc(n,sizeof(int));
     
     //Initializing Pointer to Data Mat (k*d) (Or Vectors X1,...Xn == R1....Rn)
-    for( i=0 , i<n , i++){
+    for( i=0; i<n ; i++){
         dataAloc[i] = data + i*d ; 
     }
 
@@ -65,7 +75,7 @@ int numOfCols(char *filename){
     fclose(fp);
     token = strtok(line,",");
     while (token != NULL){
-        countcols++
+        countcols++;
         token = strtok(NULL,",");
     }
     return countcols;
@@ -79,34 +89,88 @@ int numbOfRows(char *filename){
     File *fp = fopen(filename,"r");
     Assert(fp!=NULL);
     while(feof(fp)){
-        fscanf(fp,"%s",line)
+        fscanf(fp,"%s",line);
         ++countrows;
     }
     fclose(fp);
-    return countrow;
+    return countrows;
 }
 
-//Function Argmin
+double norm_calc(double *delta){
+    double s = 0;
+    int i;
+    for(i=0; i<d; i++){
+        s += pow(delta[i],2);
+    }
+    return sqrt(s);
+}
 
-//Update Centroids
+void assign(int *datapoint){
+    double val = 1.7976931348623157E+308;
+    int idx;
+    int j;
+    for(j=0; j<K; j++){
+        double delta[d];
+        int i;
+        for(i=0; i<d; i++){
+            delta[i] = datapoint[i] - CenetroidAloc[j][i];
+        }
+        double norm = norm_calc(delta);
+        if (norm < val){
+            val = norm;
+            idx = j;
+        }
+    }
+    int i;
+    for (i=0; i<n; i++) {
+        if (clustersAloc[idx][i] == 0) {
+            clustersAloc[idx][i] = *datapoint;
+        }
+    }
+}
 
-// Euclidean delta Centruids -> True or False 
+int update_centroids(int k){
+    return 0;
+}
+
+
+int main(int argc, char *argv[]) {
+    if (argc == 2) { max_iter = 200; }
+    else { max_iter = atoi(argv[2]); }
+    K = atoi(argv[0]);
+    filename = argv[1];
+    n = numbOfRows(filename);
+    d = numOfCols(filename);
+    init_DataMat(filename,n,d);
+    Init_Centroids(K,d);
+    clusters = calloc(n*K,sizeof(double));
+    clustersAloc = calloc(n,sizeof (double *));
+    int i;
+    for (i=0; i<n; i++){
+        clustersAloc[i] = clusters + i*d;
+        int j;
+        for (j=0; j<n; j++){
+            clustersAloc[i][j] = 0;
+        }
+    }
+    int iter_num = 0;
+    while (iter_num < max_iter){
+        for(i=0; i < n; i++){
+            assign(&data[i]);
+        }
+        int cnt = 0;
+        int k;
+        for (k=0; k < K; k++){
+            double *delta;
+            *delta = update_centroids(k); //updates centroids and calculate the change
+            if (norm_calc(delta) < EPSILON) {
+                cnt++;
+            }
+        }
+        if (cnt == K){break;}
+        iter_num++;
+    }
+}
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int main(int k , c[] filename, Optional Iter )
