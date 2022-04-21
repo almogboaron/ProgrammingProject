@@ -2,7 +2,32 @@
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
+typedef int DATA;
+struct linked_list{
+    DATA d;
+    struct linked_list *next;
+};
+typedef struct linked_list ELEMENT;
+typedef ELEMENT* LINK;
+
+LINK centroid_to_list(int centroid){
+    LINK head=NULL, tail=NULL;
+    head = (ELEMENT *) malloc(sizeof(ELEMENT));
+    assert(head != NULL);
+    head-> d=centroid;
+    tail = head;
+    return head;
+}
+void add_to_list(LINK list, int datapoint){
+    LINK tail = list->next;
+    tail-> next = (ELEMENT*) malloc(sizeof(ELEMENT));
+    tail = tail->next;
+    assert(tail!=NULL);
+    tail-> d=datapoint;
+    tail-> next = NULL;
+}
 
 //Declorations
 int K;
@@ -14,30 +39,27 @@ int *Centroids;
 int **CenetroidAloc;
 int *data;
 int **dataAloc;
-int *clusters;
-int **clustersAloc;
+LINK *clusters;
 double EPSILON = 0.001;
 
 
-
-
 //Function Initalizeation Centroids -> Matrix Formation as first k data points 
-void Init_Centroids(int k , int d){
-    Centroids = calloc(k*d,sizeof(float));
-    CenetroidAloc = calloc(k,sizeof(int));
+void Init_Centroids(){
+    Centroids = calloc(K*d,sizeof(float));
+    CenetroidAloc = calloc(K,sizeof(int));
     //Initializing Centroids Mat
     int i;
-    for(i=0 ; i<k*d ;i++){
+    for(i=0 ; i<K*d ;i++){
         Centroids[i] = data[i];
     }
     //Initializing Pointer to Centroids Mat (k*d)
-    for(i=0; i < k ; i++){
+    for(i=0; i < K ; i++){
         CenetroidAloc[i] = Centroids + i*d ;
     }
 }
 
 //Function Read Files and initialize Matrix (n*d) of Information 
-void init_DataMat( char *filename ,int n , int d){
+void init_DataMat(){
     float a;
     int i=0;
     int j=0;
@@ -53,24 +75,24 @@ void init_DataMat( char *filename ,int n , int d){
     }
 
     //Initialize Data Matrix( Data Array n*d); 
-    File *fp = fopen(filename,"r");
-    Assert(fp!=NULL);
+    FILE *fp = fopen(filename,"r");
+    assert(fp!=NULL);
     while(!feof(fp)){
         fscanf(fp,"%s",line);
-        number = strtok(line,",");
+        number = *strtok(&line,",");
         while(number!=NULL){
-            data[i++] = (float)atof(number);
-            number = strtok(NULL,",");
+            data[i++] = (float)atof(&number);
+            number = *strtok(NULL,",");
         }
     }
 }
 
 // Function Cols Dims. 
-int numOfCols(char *filename){
+int numOfCols(){
     int countcols=0;
     char *token,*line;
-    File *fp = fopen(filename,"r");
-    Assert(fp!=NULL);
+    FILE *fp = fopen(filename,"r");
+    assert(fp!=NULL);
     fscanf(fp,"%s",line);
     fclose(fp);
     token = strtok(line,",");
@@ -83,11 +105,11 @@ int numOfCols(char *filename){
 }
 
 //Counting Rows Dim
-int numbOfRows(char *filename){
+int numbOfRows(){
     char *line;
     int countrows=0;
-    File *fp = fopen(filename,"r");
-    Assert(fp!=NULL);
+    FILE *fp = fopen(filename,"r");
+    assert(fp!=NULL);
     while(feof(fp)){
         fscanf(fp,"%s",line);
         ++countrows;
@@ -121,38 +143,33 @@ void assign(int *datapoint){
             idx = j;
         }
     }
-    int i;
-    for (i=0; i<n; i++) {
-        if (clustersAloc[idx][i] == 0) {
-            clustersAloc[idx][i] = *datapoint;
-        }
-    }
+    add_to_list(clusters[idx],*datapoint);
 }
 
 int update_centroids(int k){
     return 0;
 }
 
+void init_clusters(){
+    clusters = calloc(K,sizeof(LINK));
+    int i;
+    for(i=0; i<K; i++){
+        LINK list_i = centroid_to_list(*CenetroidAloc[i]);
+        clusters[i] = list_i;
+    }
+}
 
 int main(int argc, char *argv[]) {
     if (argc == 2) { max_iter = 200; }
     else { max_iter = atoi(argv[2]); }
     K = atoi(argv[0]);
     filename = argv[1];
-    n = numbOfRows(filename);
-    d = numOfCols(filename);
-    init_DataMat(filename,n,d);
-    Init_Centroids(K,d);
-    clusters = calloc(n*K,sizeof(double));
-    clustersAloc = calloc(n,sizeof (double *));
+    n = numbOfRows();
+    d = numOfCols();
+    init_DataMat();
+    Init_Centroids();
+    init_clusters();
     int i;
-    for (i=0; i<n; i++){
-        clustersAloc[i] = clusters + i*d;
-        int j;
-        for (j=0; j<n; j++){
-            clustersAloc[i][j] = 0;
-        }
-    }
     int iter_num = 0;
     while (iter_num < max_iter){
         for(i=0; i < n; i++){
