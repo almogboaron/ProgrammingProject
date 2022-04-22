@@ -31,8 +31,10 @@ def init(filename, K):
         tmpmap = map(float,tmplst)
         datapoints.append(list(tmpmap))
         if n < K:
+            ## No need for reapets
             tmplst = line.rstrip().split(",")
             tmpmap = map(float,tmplst)
+            ##
             centroids.append(list(tmpmap))
         n += 1
     f.close()

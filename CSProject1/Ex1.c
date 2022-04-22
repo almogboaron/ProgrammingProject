@@ -4,24 +4,36 @@
 #include <stdlib.h>
 #include <assert.h>
 
-typedef int DATA;
+//DataPoint type(Pointer or index in matrixData)
+typedef int DATA; 
+
+//Struct for ClusterPed list = Node = Cluster.
 struct linked_list{
     DATA d;
     struct linked_list *next;
 };
-typedef struct linked_list ELEMENT;
-typedef ELEMENT* LINK;
 
-LINK centroid_to_list(int centroid){
-    LINK head=NULL, tail=NULL;
-    head = (ELEMENT *) malloc(sizeof(ELEMENT));
+//Calling a linked_list A cluster 
+typedef struct linked_list Cluster;
+
+//Pointer of Cluster is a ClusterP.
+typedef Cluster* ClusterP;
+
+
+//Don't think we need ( just adding to a new clusters each time while once cheking distance between centroid to datapoint)
+//Iterative List Creation (Lecture 4 slide 6)
+//Did not finish right (did not finish slide)
+ClusterP centroid_to_list(int DataIndex){
+    ClusterP head=NULL, tail=NULL;
+    head = (Cluster*)malloc(sizeof(Cluster));
     assert(head != NULL);
     head-> d=centroid;
-    tail = head;
     return head;
+
 }
-void add_to_list(LINK list, int datapoint){
-    LINK tail = list->next;
+// Adding A datapoint to A list 
+void add_to_list(ClusterP list, int datapoint){
+    ClusterP tail = list->next;
     tail-> next = (ELEMENT*) malloc(sizeof(ELEMENT));
     tail = tail->next;
     assert(tail!=NULL);
@@ -39,7 +51,7 @@ int *Centroids;
 int **CenetroidAloc;
 int *data;
 int **dataAloc;
-LINK *clusters;
+ClusterP *clusters;
 double EPSILON = 0.001;
 
 
@@ -125,42 +137,62 @@ double norm_calc(double *delta){
     for(i=0; i<d; i++){
         s += pow(delta[i],2);
     }
+    //Changed to no Sqrt
     return s;
 }
 
 //Assign DataPoint pointer to Cluster
 void assign(int *datapoint){
-    double val = 3.402823466 E + 38;
+    double val = 1.7976931348623158E+308;
     int idx;
     int j;
     //Go through all Centroids and choose the closest to dataPoint
     for(j=0; j<K; j++){
         double delta[d];
         int i;
+        //Calculating Delta 
         for(i=0; i<d; i++){
             delta[i] = datapoint[i] - CenetroidAloc[j][i];
         }
+        //Calculation Norm
         double norm = norm_calc(delta);
         if (norm < val){
             val = norm;
             idx = j;
         }
     }
+    //Adding The DataPoint to A cluster.
     add_to_list(clusters[idx],*datapoint);
 }
 
-//Need To Do!***************************
-int update_centroids(int k){
+//Update Centroinds and returns the Change.
+double update_centroid(){
+    int i;
+    int j;
+    // Allocating Array for calculation of data in clusters.
+    double dataSum[d]
+    
+    for (i=0;i<k;i++){
+         calc_cluster(i,dataSum)
+        for(j=0; j<d; j++){
+            CentroidsAloc[i][j] = datasum[j]
+        }
+    }
+    //Freeing Datasum Array
+    free(dataSum)
+}
 
-    return 0;
+//Calculating sum of all datapoints and then deviding in number of datapoints in cluster.
+void calc_cluster(int i, double* dataSum){
+
 }
 
 //Initialize Clusters as K first DataPoints.
 void init_clusters(){
-    clusters = calloc(K,sizeof(LINK));
+    clusters = calloc(K,sizeof(ClusterP));
     int i;
     for(i=0; i<K; i++){
-        LINK list_i = centroid_to_list(*CenetroidAloc[i]);
+        ClusterP list_i = centroid_to_list(*CenetroidAloc[i]);
         clusters[i] = list_i;
     }
 }
@@ -176,17 +208,20 @@ int main(int argc, char *argv[]) {
     init_DataMat();
     Init_Centroids();
     init_clusters();
+    
     int i;
     int iter_num = 0;
     while (iter_num < max_iter){
+        //Assigning Data to clusters.
         for(i=0; i < n; i++){
-            assign(&data[i]);
+            assign(data[i]);
         }
+        
+        //For every Cetroid update from cluster and calculate delta.
         int cnt = 0;
-        int k;
-        for (k=0; k < K; k++){
-            double *delta;
-            *delta = update_centroids(k); //updates centroids and calculate the change
+        double* delta;
+        for (i=0; i < K; i++){
+            delta = update_centroid(k); //updates centroids and calculate the change
             if (norm_calc(delta) < EPSILON) {
                 cnt++;
             }
@@ -194,6 +229,8 @@ int main(int argc, char *argv[]) {
         if (cnt == K){break;}
         iter_num++;
     }
+    
+    WriteOutToFile();
 }
 
 
