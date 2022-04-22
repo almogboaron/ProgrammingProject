@@ -45,7 +45,7 @@ double EPSILON = 0.001;
 
 //Function Initalizeation Centroids -> Matrix Formation as first k data points 
 void Init_Centroids(){
-    Centroids = calloc(K*d,sizeof(float));
+    Centroids = calloc(K*d,sizeof(double));
     CenetroidAloc = calloc(K,sizeof(int));
     //Initializing Centroids Mat
     int i;
@@ -60,13 +60,13 @@ void Init_Centroids(){
 
 //Function Read Files and initialize Matrix (n*d) of Information 
 void init_DataMat(){
-    float a;
+    double a;
     int i=0;
     int j=0;
     char line , number ;
     
     //Call location
-    data = calloc(n*d,sizeof(float));
+    data = calloc(n*d,sizeof(double));
     dataAloc = calloc(n,sizeof(int));
     
     //Initializing Pointer to Data Mat (k*d) (Or Vectors X1,...Xn == R1....Rn)
@@ -81,7 +81,7 @@ void init_DataMat(){
         fscanf(fp,"%s",line);
         number = *strtok(&line,",");
         while(number!=NULL){
-            data[i++] = (float)atof(&number);
+            data[i++] = (double)atof(&number);
             number = *strtok(NULL,",");
         }
     }
@@ -104,7 +104,7 @@ int numOfCols(){
 
 }
 
-//Counting Rows Dim
+//Counting Rows Dims.
 int numbOfRows(){
     char *line;
     int countrows=0;
@@ -118,19 +118,22 @@ int numbOfRows(){
     return countrows;
 }
 
+//Euclidian norm calc *No sqrt needed*
 double norm_calc(double *delta){
     double s = 0;
     int i;
     for(i=0; i<d; i++){
         s += pow(delta[i],2);
     }
-    return sqrt(s);
+    return s;
 }
 
+//Assign DataPoint pointer to Cluster
 void assign(int *datapoint){
-    double val = 1.7976931348623157E+308;
+    double val = 3.402823466 E + 38;
     int idx;
     int j;
+    //Go through all Centroids and choose the closest to dataPoint
     for(j=0; j<K; j++){
         double delta[d];
         int i;
@@ -146,10 +149,13 @@ void assign(int *datapoint){
     add_to_list(clusters[idx],*datapoint);
 }
 
+//Need To Do!***************************
 int update_centroids(int k){
+
     return 0;
 }
 
+//Initialize Clusters as K first DataPoints.
 void init_clusters(){
     clusters = calloc(K,sizeof(LINK));
     int i;
@@ -159,6 +165,7 @@ void init_clusters(){
     }
 }
 
+//Main Function of Kmeans Algorithem .
 int main(int argc, char *argv[]) {
     if (argc == 2) { max_iter = 200; }
     else { max_iter = atoi(argv[2]); }
