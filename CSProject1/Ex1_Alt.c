@@ -116,7 +116,7 @@ int numbOfRows(){
 }
 
 // Sum DataPoint with Apropritate Cluster Sum return idx of cluster
-int assign(int *datapoint){
+int assign(double *datapoint){
     double minDist = 1.7976931348623158E+308;
     double norm ;
     int idx;
@@ -150,16 +150,16 @@ int assign(int *datapoint){
 void SumWithCluster(double* clusterSum , double* dataPoint){
     int i;
     for(i=0; i<d; i++){
-        clusterSum = clusterSum[i] + dataPoint[i];
+        clusterSum[i] = clusterSum[i] + dataPoint[i];
     }
 }
 
 //Devide Cluster with number of points
 void NormelizeClusterSums(int* counter){
     int i,j;
-    for(i=0; i<k; i++){
+    for(i=0; i<K; i++){
         for(j=0;j<d;j++){
-            ClusterSumAloc[i][j] = div(ClusterSumAloc[i][j],counter[i])
+            ClusterSumAloc[i][j] = ClusterSumAloc[i][j]/counter[i];
         }
     }
 }
@@ -180,11 +180,12 @@ void WriteBackCentroids(){
     FILE *fp = fopen(filename_out,"w");
     assert(fp!=NULL);
     int i,j;
-    for(i=0; i<k;i++){
+    for(i=0; i<K ;i++){
         for(j=0; j<d; j++){
                 if(j==d-1){fprintf(fp,"%d,",CenetroidAloc[i][j]);}
-        }       else{fprintf(fp,"%d",CenetroidAloc[i][j])}
-        fprintf(fp,"%s","\n")}
+                else    {fprintf(fp,"%d",CenetroidAloc[i][j]);}
+        }
+        fprintf(fp,"%s","\n");
     }
     fclose(fp);
 }
@@ -214,7 +215,7 @@ int main(int argc, char *argv[]) {
 
     init_DataMat();
     Init_Centroids();
-    init_clusters();
+    init_Clusters();
     
     int i;
     int idx;
@@ -229,15 +230,16 @@ int main(int argc, char *argv[]) {
         //Assigning Data to clustersSum.
         for(i=0; i < n; i++){
             idx = assign(dataAloc[i]);
-            count[idx] += 1
+            count[idx] += 1;
         }
         
         //Normalize Cluster
         NormelizeClusterSums(count);
 
         //Updates Centroid, Reset ClusterSum, Returns Delta.
-        for(i=0; i<k; i++){
-            delta = update_centroid(CenetroidAloc[i] ,ClusterSumAloc[i])
+        double delta;
+        for(i=0; i<K; i++){
+            delta = update_centroid(CenetroidAloc[i] ,ClusterSumAloc[i]);
             if (delta < EPSILON){
                 convergenceCount+=1;
             }
