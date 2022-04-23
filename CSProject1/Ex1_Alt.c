@@ -27,29 +27,22 @@ double** dataAloc;
 
 //Function Initalizeation Centroids -> Matrix Formation as first k data points 
 void Init_Centroids(){
-    Centroids = calloc(K*d,sizeof(double));
-    CenetroidAloc = calloc(K,sizeof(int));
+
     //Initializing Centroids Mat
-    int i;
-    for(i=0 ; i<K*d ;i++){
+    for(int i=0 ; i<K*d ;i++){
         Centroids[i] = data[i];
     }
     //Initializing Pointer to Centroids Mat (k*d)
-    for(i=0; i < K ; i++){
+    for(int i=0; i < K ; i++){
         CenetroidAloc[i] = Centroids + i*d ;
     }
 }
 
 //Function Read Files and initialize Matrix (n*d) of Information 
 void init_DataMat(){
-    double a;
     int i=0;
-    int j=0;
-    char line , number ;
-    
-    //Call location
-    data = calloc(n*d,sizeof(double));
-    dataAloc = calloc(n,sizeof(int));
+    char *line , *number ;
+    FILE* fp;
     
     //Initializing Pointer to Data Mat (k*d) (Or Vectors X1,...Xn == R1....Rn)
     for( i=0; i<n ; i++){
@@ -57,14 +50,14 @@ void init_DataMat(){
     }
 
     //Initialize Data Matrix( Data Array n*d); 
-    FILE *fp = fopen(filename_in,"r");
+    fp = fopen(filename_in,"r");
     assert(fp!=NULL);
     while(!feof(fp)){
         fscanf(fp,"%s",line);
-        number = *strtok(&line,",");
+        number = strtok(line,",");
         while(number!=NULL){
-            data[i++] = (double)atof(&number);
-            number = *strtok(NULL,",");
+            data[i++] = (double)atof(number);
+            number = strtok(NULL,",");
         }
     }
 }
@@ -114,6 +107,13 @@ int numbOfRows(){
     fclose(fp);
     return countrows;
 }
+//Sum Data Point with apropriate Cluster
+void SumWithCluster(double* clusterSum , double* dataPoint){
+    int i;
+    for(i=0; i<d; i++){
+        clusterSum[i] = clusterSum[i] + dataPoint[i];
+    }
+}
 
 // Sum DataPoint with Apropritate Cluster Sum return idx of cluster
 int assign(double *datapoint){
@@ -144,14 +144,6 @@ int assign(double *datapoint){
     //Summing the DataPoint With the closest Cluster.
    SumWithCluster(ClusterSumAloc[idx], datapoint);
    return idx;
-}
-
-//Sum Data Point with apropriate Cluster
-void SumWithCluster(double* clusterSum , double* dataPoint){
-    int i;
-    for(i=0; i<d; i++){
-        clusterSum[i] = clusterSum[i] + dataPoint[i];
-    }
 }
 
 //Devide Cluster with number of points
@@ -212,6 +204,12 @@ int main(int argc, char *argv[]) {
     //Initialization
     n = numbOfRows();
     d = numOfCols();
+    ClusterSum = calloc(K*d,sizeof(double));
+    ClusterSumAloc = calloc(K,sizeof(int));
+    Centroids = calloc(K*d,sizeof(double));
+    CenetroidAloc = calloc(K,sizeof(int));
+    data = calloc(n*d,sizeof(double));
+    dataAloc = calloc(n,sizeof(int));
 
     init_DataMat();
     Init_Centroids();
@@ -248,7 +246,13 @@ int main(int argc, char *argv[]) {
         if (convergenceCount == K){break;}
         iter_num++;
     }
-WriteBackCentroids();  
+WriteBackCentroids();
+free(ClusterSum);
+free(ClusterSumAloc);
+free(Centroids);
+free(CenetroidAloc);
+free(data);
+free(dataAloc);
 }
 
 
