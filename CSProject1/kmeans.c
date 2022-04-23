@@ -178,6 +178,7 @@ double update_centroid(double* Centroid , double* ClusterSum){
     return sqrt(norm);
 }
 
+/*Fuction to WriteBack the Centroids Matrix to output file*/
 void WriteBackCentroids(){
     int i,j;
     FILE *fp = fopen(filename_out,"w");
