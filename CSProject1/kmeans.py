@@ -72,6 +72,8 @@ def norm_calc(delta):
 def write_to_file(centroids):
     f = open("output.txt","w")
     for m in centroids:
+        for i in range(len(m)):
+            m[i] = round(m[i],4)
         f.write(str(m).strip("[]") + "\n")
     f.close()
     return f
