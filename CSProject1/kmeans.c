@@ -265,6 +265,7 @@ free(Centroids);
 free(CenetroidAloc);
 free(data);
 free(dataAloc);
+free(count);
 return 1;
 }
 
