@@ -1,6 +1,6 @@
 import math
 
-def main(K, filename, max_iter=200):
+def main(K, max_iter=200, filename, fileout):
     centroids, datapoints, n = init(filename, K) ## n = number of datapoints
     clusters = [[] for _ in range(K)]
     iter_number = 0
@@ -17,7 +17,7 @@ def main(K, filename, max_iter=200):
         if cnt == K:
             break
         iter_number += 1
-    out_file = write_to_file(centroids)
+    out_file = write_to_file(centroids,fileout)
     return out_file
 
 def init(filename, K):
@@ -69,8 +69,8 @@ def norm_calc(delta):
         s += pow(x, 2)
     return math.sqrt(s)
 
-def write_to_file(centroids):
-    f = open("output.txt","w")
+def write_to_file(centroids,fileout):
+    f = open(fileout,"w")
     for m in centroids:
         for i in range(len(m)):
             m[i] = round(m[i],4)
@@ -79,7 +79,7 @@ def write_to_file(centroids):
     return f
 
 if __name__ == "__main__":
-    print(main(3,"input_1.txt",100))
+    print(main(3,100,"input_1.txt","outfilepy.txt"))
 
 
 
