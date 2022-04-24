@@ -32,6 +32,9 @@ double** ClusterSumAloc;
 double* data;
 double** dataAloc;
 
+/*define assert with message*/
+#define assert__(x) for (;!(x);assert(x))
+
 /*Function Initalizeation Centroids -> Matrix Formation as first k data points */
 void Init_Centroids(){
     int i;
@@ -58,7 +61,9 @@ void init_DataMat(){
 
     /*Initialize Data Matrix( Data Array n*d);*/
     fp = fopen(filename_in,"r");
-    assert(fp!=NULL);
+    assert__(fp!=NULL){
+        printf("An Error Has Occurred");
+    }
 
     for(i=0;i<n;i++){
         for(j=0;j<d;j++){
@@ -87,7 +92,9 @@ int numOfCols(){
     int countcols=0;
     char ch;
     FILE *fp = fopen(filename_in,"r");
-    assert(fp!=NULL);
+    assert__(fp!=NULL){
+        printf("An Error Has Occurred");
+    }
     
     while(!feof(fp)){
         ch = fgetc(fp);
@@ -108,7 +115,9 @@ int numbOfRows(){
     char ch ;
     int countrows=0;
     FILE *fp = fopen(filename_in,"r");
-    assert(fp!=NULL);
+    assert__(fp!=NULL){
+        printf("An Error Has Occurred");
+    }
     
     while(!feof(fp)){
         ch = fgetc(fp);
@@ -168,7 +177,7 @@ void NormelizeClusterSums(int* counter){
 
 /*Update Centroinds, Resets Cluster  And returns the EuclidianDistance.*/
 double update_centroid(double* Centroid , double* ClusterSum){
-    double norm;
+    double norm=0;
     int i;
     for(i=0; i<d; i++){
         norm +=pow(Centroid[i] - ClusterSum[i],2);
@@ -182,7 +191,9 @@ double update_centroid(double* Centroid , double* ClusterSum){
 void WriteBackCentroids(){
     int i,j;
     FILE *fp = fopen(filename_out,"w");
-    assert(fp!=NULL);
+    assert__(fp!=NULL){
+        printf("An Error Has Occurred");
+    }
 
     for(i=0; i<K ;i++){
         for(j=0; j<d; j++){
@@ -215,23 +226,50 @@ int main(int argc, char *argv[]) {
         filename_in = argv[3];
         filename_out = argv[4]; 
     }
+    assert__(K>1){
+        printf("Invalid Input!");
+    }
 
     /*Initialization*/
     n = numbOfRows();
+    assert__(K<=n){
+        printf("Invalid Input!");
+    }
     d = numOfCols();
 
     ClusterSum = calloc(K*d,sizeof(double));
+    assert__(ClusterSum!=NULL){
+        printf("An Error Has Occurred");
+    }
     ClusterSumAloc = calloc(K,sizeof(double));
+    assert__(ClusterSumAloc!=NULL){
+        printf("An Error Has Occurred");
+    }
     Centroids = calloc(K*d,sizeof(double));
+    assert__(Centroids!=NULL){
+        printf("An Error Has Occurred");
+    }
     CenetroidAloc = calloc(K,sizeof(double));
+    assert__(CenetroidAloc!=NULL){
+        printf("An Error Has Occurred");
+    }
     data = calloc(n*d,sizeof(double));
+    assert__(data!=NULL){
+        printf("An Error Has Occurred");
+    }
     dataAloc = calloc(n,sizeof(double));
+    assert__(dataAloc!=NULL){
+        printf("An Error Has Occurred");
+    }
 
     init_DataMat();
     Init_Centroids();
     init_Clusters();
     
     count = calloc(K,sizeof(int));
+    assert__(count!=NULL){
+        printf("An Error Has Occurred");
+    }
     while (iter_num < max_iter){
 
         /*Reset:countPerCluster , ConvergenceCount;*/
@@ -267,7 +305,7 @@ free(CenetroidAloc);
 free(data);
 free(dataAloc);
 free(count);
-return 1;
+return 0;
 }
 
 
