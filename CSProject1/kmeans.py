@@ -1,22 +1,34 @@
 import math
+import sys
 
-def main(*argv):
-    K = argv[0]
+def main(arr):
+    
+    try:
+      if len(arr) == 4:
+          K = int(arr[1])
+          max_iter = 200
+          filename = arr[2]
+          fileout = arr[3]
+      elif len(arr) == 5:
+          K = int(arr[1])
+          max_iter = int(arr[2])
+          filename = arr[3]
+          fileout = arr[4]
+      else:
+        raise Exception("Invalid Input!")
+    
+    except:
+      print("Invalid Input!\n")
+      sys.exit(1)
+
     assert K > 1, "Invalid Input!"
-    if len(argv) == 3:
-        max_iter = 200
-        filename = argv[1]
-        fileout = argv[2]
-    else:
-        max_iter = argv[1]
-        filename = argv[2]
-        fileout = argv[3]
-
+    
     centroids, datapoints, n = init(filename, K) ## n = number of datapoints
     assert K < n, "Invalid Input!"
     clusters = [[] for _ in range(K)]
     iter_number = 0
     epsilon = 0.001
+    
     while iter_number < max_iter:
         for i in range(n):
             assign(datapoints[i], clusters, centroids, K)
@@ -31,7 +43,6 @@ def main(*argv):
         iter_number += 1
     out_file = write_to_file(centroids, fileout)
 
-
 def init(filename, K):
     ## reads the file and return array of centroids, array of data points and the number of lines ##
     centroids = []
@@ -44,15 +55,14 @@ def init(filename, K):
             tmpmap = map(float,tmplst)
             datapoints.append(list(tmpmap))
             if n < K:
-                ## No need for reapets
                 tmplst = line.rstrip().split(",")
                 tmpmap = map(float,tmplst)
-                ##
                 centroids.append(list(tmpmap))
             n += 1
         f.close()
     except:
-        "An Error Has Occurred"
+        print("An Error Has Occurred")
+        sys.exit(1)
     return centroids, datapoints, n
 
 def assign(datapoint, clusters, centroids, K):
@@ -66,7 +76,8 @@ def assign(datapoint, clusters, centroids, K):
         idx_cluster = tmp.index(min(tmp))
         clusters[idx_cluster].append(datapoint)
     except:
-        "An Error Has Occurred"
+        print("An Error Has Occurred")
+        sys.exit(1)
 
 def update(centroid, cluster):
     ## updates the centroid and calculate the change ##
@@ -80,7 +91,8 @@ def update(centroid, cluster):
         for i in range(len(centroid)):
             delta.append(centroid[i] - new_centroid[i])
     except:
-        "An Error Has Occurred"
+        print("An Error Has Occurred")
+        sys.exit(1)
     return delta, new_centroid
 
 def norm_calc(delta):
@@ -89,7 +101,8 @@ def norm_calc(delta):
         for x in delta:
             s += pow(x, 2)
     except:
-        "An Error Has Occurred"
+        print("An Error Has Occurred")
+        sys.exit(1)
     return math.sqrt(s)
 
 def write_to_file(centroids,fileout):
@@ -101,11 +114,13 @@ def write_to_file(centroids,fileout):
             f.write(str(m).strip("[]") + "\n")
         f.close()
     except:
-        "An Error Has Occurred"
+        print("An Error Has Occurred")
+        sys.exit(1)
     return f
 
+
 if __name__ == "__main__":
-    print(main(3,100,"input_1.txt","outfilepy.txt"))
+    main(sys.argv)
 
 
 

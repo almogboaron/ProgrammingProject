@@ -210,8 +210,12 @@ void WriteBackCentroids(){
 int main(int argc, char *argv[]) {
     int i;
     int idx;
+    
     /*Make Assertions!*/
-
+    assert__(argc == 4 || argc == 5){
+        printf("Invalid Input!");
+    }
+    
     /*Without MaxIter*/
     if (argc == 4) { 
         K = atoi(argv[1]);
