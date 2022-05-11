@@ -36,20 +36,25 @@ def main(arr):
     df = pd.merge(table1,table2,on=0,how="inner",sort=True)
     df.drop(columns=df.columns[0],axis=1,inplace=True)
 
+    num_of_cols = df.shape[1]
+    num_of_rows = df.shape[0]
+
     # kmeans++ implementation
-    centroids = np.zeros(shape=(K,len(df.columns)))
+    centroids = np.zeros(shape=(K,num_of_cols))
+    np_df = df.to_numpy() # working with our dataframe in numpy format
     np.random.seed(0)
-    centroids[0] = np.random.choice(df.rows)
-    for i in range(1,K):
-        distances = np.linalg.norm(df.to_numpy() - centroids[0])
-        for j in range(1, i):
-            distances = np.minimum(distances, np.linalg.norm(df.to_numpy() - centroids[j]))
-
-
-
-
-
-
+    idx = np.random.choice(num_of_rows) # choosing random row index
+    centroids[0] = np_df[idx]
+    for i in range(1, K):
+        distances = np.full(num_of_rows, sys.float_info.max)
+        distances[0] = np.linalg.norm(np_df[0] - centroids[0])
+        for l in range(num_of_rows):
+            for j in range(1, i):
+                distances[l] = min(distances[l], np.linalg.norm(np_df[l] - centroids[j]))
+        p = np.zeros(num_of_rows)
+        for l in range(num_of_rows):
+            p[l] = distances[l] / np.sum(distances)
+        centroids[i] = np_df[np.argmax(p)] # choosing the data frame with max likelihood to be chosen
 
 
 
