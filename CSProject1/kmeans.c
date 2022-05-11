@@ -71,6 +71,7 @@ void init_DataMat(){
             fgetc(fp);
         }
     }
+    fclose(fp);
 }
 
 /*Initializeation of ClusterSum*/
@@ -311,6 +312,3 @@ free(dataAloc);
 free(count);
 return 0;
 }
-
-
-
