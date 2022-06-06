@@ -36,16 +36,23 @@ double** ClusterSumAloc;
 double* data;
 double** dataAloc;
 
+/*Python Objects*/
+PyObject* data_arr; 
+PyObject* centroid_arr; 
+
 /*define assert with message*/
 #define assert__(x) for (;!(x);assert(x))
 
 /*Function Initalizeation Centroids -> Matrix Formation as first k data points */
 void Init_Centroids(){
     int i;
+    int j;
 
     /*Initializing Centroids Mat*/
-    for(i=0 ; i<K*d ;i++){
-        Centroids[i] = data[i];
+    for(i=0;i<K;i++){
+        for(j=0;j<d;j++){
+            Centroids[i*d+j] = PyFloat_AsDouble(PYList_getItem(PyList_GetItem(centroid_arr,i),j))
+        }
     }
     /*Initializing Pointer to Centroids Mat (k*d)*/
     for(i=0; i < K ; i++){
@@ -53,15 +60,20 @@ void Init_Centroids(){
     }
 }
 
-/*Function Read Files and initialize Matrix (n*d) of Information*/ 
+/*Function Read PythonData From List of Lists (Matrix) and initialize C Matrix (n*d) of Information*/ 
 void init_DataMat(){
     int i;
+    int j;
 
+    for(i=0;i<n;i++){
+        for(j=0;j<d;j++){
+            data[i*d+j] = PyFloat_AsDouble(PYList_getItem(PyList_GetItem(data_arr,i),j))
+        }
+    }
     /*Initializing Pointer to Data Mat (k*d) (Or Vectors X1,...Xn == R1....Rn)*/
     for( i=0; i<n ; i++){
         dataAloc[i] = data + i*d ; 
     }
-
 }
 
 /*Initializeation of ClusterSum*/
@@ -77,8 +89,6 @@ void init_Clusters(){
         ClusterSumAloc[i] = ClusterSum + i*d ;
     }
 }
-
-
 
 /*Sum Data Point with apropriate Cluster*/
 void SumWithCluster(double* clusterSum , double* dataPoint){
@@ -138,21 +148,33 @@ double update_centroid(double* Centroid , double* ClusterSum){
     return sqrt(norm);
 }
 
-
-
+/*Create PyCentroids matrix*/
+Pyobject* cCentroidsToPy(){
+    int i;
+    int j;
+    PyObject* pyCentroids = PyList_New(0);
+    for(i=0;i<K;i++){
+        PyObject* PyCentroid = PyList_New(0);
+        for(j=0;j<d;j++){
+            if(PyList_Append(PyCentroid,PyFloat_FromDouble(CenetroidAloc[i][j]))==-1){
+                return NULL;
+            }
+        }
+        if(PyList_Append(pyCentroids,pyCentroid)==-1){
+            return NULL;
+        }
+    }
+    return pyCentroids;
+}
 /*Main Function of Kmeans Algorithem .*/
-static int kmeans(int argc, char *argv[]) {
+static PyObject* kmeans(int argc, char *argv[]) {
     int i;
     int idx;
-
-    assert__(K>1){
-        printf("Invalid Input!");
-    }
-    /*Initialization*/
+    /*Asserts*/
     assert__(K<=n){
         printf("Invalid Input!");
     }
-
+    /*Initialization*/
     ClusterSum = calloc(K*d,sizeof(double));
     assert__(ClusterSum!=NULL){
         printf("An Error Has Occurred");
@@ -212,6 +234,9 @@ static int kmeans(int argc, char *argv[]) {
         if (convergenceCount == K){break;}
         iter_num++;
     }
+/*Update pyCentroids And return that object*/
+PyObject* pyCentroids = cCentroidsToPy();
+/*Free Memory*/
 free(ClusterSum);
 free(ClusterSumAloc);
 free(Centroids);
@@ -219,7 +244,7 @@ free(CenetroidAloc);
 free(data);
 free(dataAloc);
 free(count);
-return 0;
+return pyCentroids;
 }
 
 /*the func that operates when we call the mykmeanssp module from python,
@@ -231,26 +256,19 @@ return 0;
 static PyObject* kmeans_capi(PyObject *self, PyObject *args){
     /* passing arguments from py- K,num of rows, num of cols, max_iter, epsilon,
      * data and initial centroinds*/
-    PyObject *data_arr; /*not sure about where to keep the data before we init it*/
-    PyObject *centroid_arr; /*same*/
 
-    if (!PyArg_ParseTuple(args,"O", &K, &n, &d, &max_iter, &EPSILON, &data_arr, &centroid_arr)){
+    if (!PyArg_ParseTuple(args,"iiiidO!O!", &K, &n, &d, &max_iter, &EPSILON, &data_arr, &centroid_arr)){
         return NULL;
     }
-    /* don't forget to change the epsilon init */
-    /* need to change the main(I changed the main's name to kmeans.)
-    * the new func we'll receive the data and the centroids instead of a file
-    * so we won't have to read it again.
-    * the other variabels are initialize in parsetuple so we can erase it from the main.*/
+    /* don't forget to change the epsilon init*/
 
-    return Py_BuildValue("d", kmeans(data_arr, centroid_arr));
+    return kmeans();
     /* returning double or array*/
 }
 
-
 /* declaring the kmeans function */
 static PyMethodDef capiMethods[] = {
-        {"mykmeanssp", (PyCFunction) kmeans_capi, METH_VARARGS, PyDoc_STR("kmeans")},
+        {"fit", (PyCFunction) kmeans_capi, METH_VARARGS, PyDoc_STR("kmeans algorithem")},
                  {NULL,NULL,0,NULL}
 };
 

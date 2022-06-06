@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import random
 import sys
+import mykmeanssp
 
 
 
@@ -45,6 +46,7 @@ def main(arr):
     np.random.seed(0)
     idx = np.random.choice(num_of_rows) # choosing random row index
     centroids[0] = np_df[idx]
+    lst_Indexes = [idx]
     for i in range(1, K):
         distances = np.full(num_of_rows, sys.float_info.max)
         distances[0] = np.linalg.norm(np_df[0] - centroids[0])
@@ -55,8 +57,16 @@ def main(arr):
         for l in range(num_of_rows):
             p[l] = distances[l] / np.sum(distances)
         centroids[i] = np_df[np.argmax(p)] # choosing the data frame with max likelihood to be chosen
+        lst_Indexes.append[np.argmax(p)]
+    #Orginazing Data for C function
+    centroids = np.tolist(centroids)
+    np_df = np.tolist(np_df)
 
-
+    #Input K,NumOfRows,NumOfCols,max_iter,epsilon,Datalist,CentroidList
+    new_Centroids = mykmeanssp.fit(K,num_of_rows,num_of_cols,max_iter,epsilon,np_df,centroids)
+    print(lst_Indexes)
+    for centroid in new_Centroids:
+        print(centroid)
 
 
 if __name__== "__main__":
