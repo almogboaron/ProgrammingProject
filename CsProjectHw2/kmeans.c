@@ -103,7 +103,7 @@ int assign(double *datapoint){
     double minDist = DBL_MAX;
     double norm=0 ;
     int i,j;
-    int idx;
+    int idx=0;
 
     /*Go through all Centroids and choose the closest to dataPoint*/
     for(i=0; i<K; i++){
