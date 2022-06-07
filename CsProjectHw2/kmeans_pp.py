@@ -13,13 +13,13 @@ def main(arr):
         if len(arr) == 5:
             K = int(arr[1])
             max_iter = 300
-            epsilon = arr[2]
+            epsilon = float(arr[2])
             filename1 = arr[3]
             filename2 = arr[4]
         elif len(arr) == 6:
             K = int(arr[1])
             max_iter = int(arr[2])
-            epsilon = arr[3]
+            epsilon = float(arr[3])
             filename1 = arr[4]
             filename2 = arr[5]
         else:
@@ -57,10 +57,11 @@ def main(arr):
         for l in range(num_of_rows):
             p[l] = distances[l] / np.sum(distances)
         centroids[i] = np_df[np.argmax(p)] # choosing the data frame with max likelihood to be chosen
-        lst_Indexes.append[np.argmax(p)]
+        lst_Indexes.append(int(np.argmax(p)))
+    
     #Orginazing Data for C function
-    centroids = np.tolist(centroids)
-    np_df = np.tolist(np_df)
+    centroids = centroids.tolist()
+    np_df = np_df.tolist()
 
     #Input K,NumOfRows,NumOfCols,max_iter,epsilon,Datalist,CentroidList
     new_Centroids = mykmeanssp.fit(K,num_of_rows,num_of_cols,max_iter,epsilon,np_df,centroids)
