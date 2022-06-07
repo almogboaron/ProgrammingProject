@@ -51,7 +51,7 @@ void Init_Centroids(){
     /*Initializing Centroids Mat*/
     for(i=0;i<K;i++){
         for(j=0;j<d;j++){
-            Centroids[i*d+j] = PyFloat_AsDouble(PYList_getItem(PyList_GetItem(centroid_arr,i),j))
+            Centroids[i*d+j] = PyFloat_AsDouble(PyList_GetItem(PyList_GetItem(centroid_arr,i),j));
         }
     }
     /*Initializing Pointer to Centroids Mat (k*d)*/
@@ -67,7 +67,7 @@ void init_DataMat(){
 
     for(i=0;i<n;i++){
         for(j=0;j<d;j++){
-            data[i*d+j] = PyFloat_AsDouble(PYList_getItem(PyList_GetItem(data_arr,i),j))
+            data[i*d+j] = PyFloat_AsDouble(PyList_GetItem(PyList_GetItem(data_arr,i),j));
         }
     }
     /*Initializing Pointer to Data Mat (k*d) (Or Vectors X1,...Xn == R1....Rn)*/
@@ -149,7 +149,7 @@ double update_centroid(double* Centroid , double* ClusterSum){
 }
 
 /*Create PyCentroids matrix*/
-Pyobject* cCentroidsToPy(){
+PyObject* cCentroidsToPy(){
     int i;
     int j;
     PyObject* pyCentroids = PyList_New(0);
@@ -160,14 +160,14 @@ Pyobject* cCentroidsToPy(){
                 return NULL;
             }
         }
-        if(PyList_Append(pyCentroids,pyCentroid)==-1){
+        if(PyList_Append(pyCentroids,PyCentroid)==-1){
             return NULL;
         }
     }
     return pyCentroids;
 }
 /*Main Function of Kmeans Algorithem .*/
-static PyObject* kmeans(int argc, char *argv[]) {
+static PyObject* kmeans() {
     int i;
     int idx;
     /*Asserts*/
@@ -273,7 +273,7 @@ static PyMethodDef capiMethods[] = {
 };
 
 /*defining the module*/
-static struct PyModuleDef capimodule = {
+static struct PyModuleDef moduledef = {
         PyModuleDef_HEAD_INIT, "mykmeanssp", NULL, -1, capiMethods
 };
 
