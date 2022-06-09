@@ -168,6 +168,7 @@ PyObject* cCentroidsToPy(){
 }
 /*Main Function of Kmeans Algorithem .*/
 static PyObject* kmeans() {
+    printf("Enters!");
     int i;
     int idx;
     /*Asserts*/
@@ -236,6 +237,7 @@ static PyObject* kmeans() {
     }
 /*Update pyCentroids And return that object*/
 PyObject* pyCentroids = cCentroidsToPy();
+
 /*Free Memory*/
 free(ClusterSum);
 free(ClusterSumAloc);
@@ -247,20 +249,13 @@ free(count);
 return pyCentroids;
 }
 
-/*the func that operates when we call the mykmeanssp module from python,
- * the fuction will get the cmd arguments that we proccesed in python and call the main function
- * we wrote in hw1 with some diffrences.
- * I renamed the main func to kmeans.
- */
+/*the func that operates when we call the mykmeanssp module from python, the fuction will get the cmd arguments that we proccesed in python and call the main function*/
 
-static PyObject* kmeans_capi(PyObject *self, PyObject *args){
-    /* passing arguments from py- K,num of rows, num of cols, max_iter, epsilon,
-     * data and initial centroinds*/
-
-    if (!PyArg_ParseTuple(args,"iiiidO!O!", &K, &n, &d, &max_iter, &EPSILON, &data_arr, &centroid_arr)){
+static PyObject* fit(PyObject* Py_UNUSED(self), PyObject* args){
+    /* passing arguments from py- K,num of rows, num of cols, max_iter, epsilon, data and initial centroinds*/
+    if (!PyArg_ParseTuple(args,"iiiidO!O!", &K, &n, &d, &max_iter, &EPSILON,&PyList_Type ,&data_arr,&PyList_Type, &centroid_arr)){
         return NULL;
-    }
-    /* don't forget to change the epsilon init*/
+    } 
 
     return kmeans();
     /* returning double or array*/
@@ -268,7 +263,7 @@ static PyObject* kmeans_capi(PyObject *self, PyObject *args){
 
 /* declaring the kmeans function */
 static PyMethodDef capiMethods[] = {
-        {"fit", (PyCFunction) kmeans_capi, METH_VARARGS, PyDoc_STR("kmeans algorithem")},
+        {"fit", (PyCFunction) fit, METH_VARARGS, PyDoc_STR("kmeans algorithem")},
                  {NULL,NULL,0,NULL}
 };
 

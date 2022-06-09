@@ -4,8 +4,6 @@ import random
 import sys
 import mykmeanssp
 
-
-
 def main(arr):
 
     # reading user CMD
@@ -28,9 +26,13 @@ def main(arr):
     except:
         print("Invalid Input!\n")
         sys.exit(1)
-
+    # Asserts
     assert K > 1, "Invalid Input!"
-
+    assert filename1[-4:]==".txt" or filename1[-4:]==".csv" ,"Invalid Input!"
+    assert filename2[-4:]==".txt" or filename2[-4:]==".csv" ,"Invalid Input!"
+    assert epsilon>0 ,"Invalid Input!"
+    assert max_iter>0 ,"Invalid Input!"
+    
     # inner join of 2 files
     table1 = pd.read_csv(filename1,header=None)
     table2 = pd.read_csv(filename2,header=None)
@@ -46,18 +48,20 @@ def main(arr):
     np.random.seed(0)
     idx = np.random.choice(num_of_rows) # choosing random row index
     centroids[0] = np_df[idx]
-    lst_Indexes = [idx]
+    lst_Indexes = [i for i in range(num_of_rows)]
+    print
+    lst_choise = [idx]
+    distances = np.full(num_of_rows, sys.float_info.max)
     for i in range(1, K):
-        distances = np.full(num_of_rows, sys.float_info.max)
-        distances[0] = np.linalg.norm(np_df[0] - centroids[0])
         for l in range(num_of_rows):
-            for j in range(1, i):
-                distances[l] = min(distances[l], np.linalg.norm(np_df[l] - centroids[j]))
+            for j in range(0, i):
+                distances[l] = min(distances[l], (np.linalg.norm(np_df[l] - centroids[j]))**2)
         p = np.zeros(num_of_rows)
         for l in range(num_of_rows):
             p[l] = distances[l] / np.sum(distances)
-        centroids[i] = np_df[np.argmax(p)] # choosing the data frame with max likelihood to be chosen
-        lst_Indexes.append(int(np.argmax(p)))
+        selected = np.random.choice(lst_Indexes, None, p=p)
+        centroids[i] = np_df[selected] # choosing the data frame with max likelihood to be chosen
+        lst_choise.append(selected)
     
     #Orginazing Data for C function
     centroids = centroids.tolist()
@@ -65,9 +69,15 @@ def main(arr):
 
     #Input K,NumOfRows,NumOfCols,max_iter,epsilon,Datalist,CentroidList
     new_Centroids = mykmeanssp.fit(K,num_of_rows,num_of_cols,max_iter,epsilon,np_df,centroids)
-    print(lst_Indexes)
-    for centroid in new_Centroids:
-        print(centroid)
+    
+    #toString
+    result = str(lst_choise).strip("[]").replace(" ","")+"\n"
+    for m in new_Centroids:
+        for i in range(len(m)):
+            m[i] = round(m[i],4)
+        result += str(m).strip("[]").replace(" ","")+"\n"
+    print(result)
+
 
 
 if __name__== "__main__":
