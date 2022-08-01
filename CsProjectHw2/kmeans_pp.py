@@ -49,8 +49,7 @@ def main(arr):
     idx = np.random.choice(num_of_rows) # choosing random row index
     centroids[0] = np_df[idx]
     lst_Indexes = [i for i in range(num_of_rows)]
-    print
-    lst_choise = [idx]
+    lst_choice = [idx]
     distances = np.full(num_of_rows, sys.float_info.max)
     for i in range(1, K):
         for l in range(num_of_rows):
@@ -61,7 +60,7 @@ def main(arr):
             p[l] = distances[l] / np.sum(distances)
         selected = np.random.choice(lst_Indexes, None, p=p)
         centroids[i] = np_df[selected] # choosing the data frame with max likelihood to be chosen
-        lst_choise.append(selected)
+        lst_choice.append(selected)
     
     #Orginazing Data for C function
     centroids = centroids.tolist()
@@ -71,7 +70,7 @@ def main(arr):
     new_Centroids = mykmeanssp.fit(K,num_of_rows,num_of_cols,max_iter,epsilon,np_df,centroids)
     
     #toString
-    result = str(lst_choise).strip("[]").replace(" ","")+"\n"
+    result = str(lst_choice).strip("[]").replace(" ","")+"\n"
     for m in new_Centroids:
         for i in range(len(m)):
             m[i] = round(m[i],4)
