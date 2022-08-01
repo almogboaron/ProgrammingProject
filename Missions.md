@@ -4,9 +4,9 @@ Missons Until 1.8 :
 -------------------
 - [x] Implement Choosing CMD for Python.
 - [x] Implement SubClass enum for Python.
-- [ ] Implement Switch Cases for Python.
-- [ ] Implement Python C API Functions in Python.
-- [ ] Check Errors in Ex2 and Correct Tham.
+- [x] Implement Switch Cases for Python.
+- [x] Implement Python C API Functions in Python.
+- [ ] Check Errors in Ex2 and Correct Tham. - Found a rounding effect at pp_kmeans.py changed to format .4
 
 ---------------------
 
