@@ -36,6 +36,18 @@ double** ClusterSumAloc;
 double* data;
 double** dataAloc;
 
+/*Weighted Adjacency Matrix decloration*/
+double* wam;
+double** wamAloc;
+
+/*The Diagonal Degree Matrix*/
+double* ddg;
+double** ddgAloc;
+
+/*The Normalized Graph Laplacian*/
+double* lnorm;
+double** lnormAloc;
+
 /*Python Objects*/
 PyObject* data_arr;
 PyObject* centroid_arr;
@@ -147,7 +159,135 @@ double update_centroid(double* Centroid , double* ClusterSum){
     }
     return sqrt(norm);
 }
+/*-------------------Wam-------------------*/
+/*Norm Implementation*/
+double norm2(int i, int j){
+    int k;
+    double res = 0;
 
+    if(i==j){
+        return 0;
+    }
+
+    for(k=0;k<n;k++){
+        res+=pow(dataAloc[i][k]-dataAloc[j][k],2)
+    }
+
+    return sqrt(res);
+}
+
+/*Wam Initialization and Implementation*/
+void wamInit(){
+    int i,j;
+    /*Initialize*/
+    wam = calloc(n*n,sizeof(double));
+    assert__(wam!=NULL){
+        printf("An Error Has Occurred");
+    }
+    wamAloc = calloc(n,sizeof(double*));
+    assert__(wamAloc!=NULL){
+        printf("An Error Has Occurred");
+    }
+    
+    for(i=0;i<n;i++){
+        wamAloc[i] = wam + i*n;
+    }
+    /*Implementation*/
+
+    for(i=0;i<n;i++){
+        for(j=0;j<n;j++){
+            wamAloc[i][j] = exp(-(norm2(i,j)/2));
+        }
+    }
+}
+
+/*------------------Diagonal Degree Matrix--------------*/
+void ddgInit(){
+    int i,z;
+    /*Initialize*/
+    ddg = calloc(n*n,sizeof(double));
+    assert__(ddg!=NULL){
+        printf("An Error Has Occurred");
+    }
+    ddgAloc = calloc(n,sizeof(double*));
+    assert__(ddgAloc!=NULL){
+        printf("An Error Has Occurred");
+    }
+
+    for(i=0;i<n;i++){
+        ddgAloc[i] = ddg + i*n;
+    }
+
+    /*Implementation*/
+    for(i=0;i<n;i++){
+        for(z=0;z<n;z++){
+            ddgAloc[i][i] += wamAloc[i][z]
+        }
+    }
+}
+
+/*---------------The Normalized Graph Laplacian---------*/
+/*Matrix Multiplacation*/
+void MatMulti(double** mat1,double** mat2 , double** matRes){
+    int i,j,k;
+    for(i=0;i<n;i++){
+        for(j=0;j<n;j++){
+            for(k=0;k<n;k++){
+                matRes[i][j]+=mat1[i][k]*mat2[k][j];
+            }
+        }
+    }
+}
+
+/*Matrix Substraction*/
+void MatSubEye( double** matRes){
+    int i,j;
+    for(i=0;i<n;i++){
+        for(j=0;j<n;j++){
+            if(i==j){ matRes[i][j] = 1 - matRes[i][j];}
+            else{matRes[i][j]= 0 - matRes[i][j];}
+        }
+    }
+}
+
+/*Lnorm Implementation*/
+void lnormInit(){
+    int i;
+    /*Initialize*/
+    lnorm = calloc(n*n,sizeof(double));
+    assert__(lnorm!=NULL){
+        printf("An Error Has Occurred");
+    }
+    lnormAloc = calloc(n,sizeof(double*));
+    assert__(lnormAloc!=NULL){
+        printf("An Error Has Occurred");
+    }
+    res = calloc(n*n,sizeof(double));
+    assert__(lnorm!=NULL){
+        printf("An Error Has Occurred");
+    }
+    resAloc = calloc(n,sizeof(double*));
+    assert__(lnormAloc!=NULL){
+        printf("An Error Has Occurred");
+    }
+    for(i=0;i<n;i++){
+        lnormAloc[i] = lnorm + i*n;
+        resAloc[i] = res +i*n;
+    }
+
+    /*Implementation*/
+    for(i=0;i<n;i++){
+        ddgAlloc[i][i] = 1/sqrt(ddgAloc[i][i]);
+    }
+    MatMulti(wamAloc,ddgAloc,resAloc);
+    MatMulti(ddgAloc,resAloc,lnormAloc);
+    MatSubEye(lnormAloc);
+    free(res);free(resAloc);
+}
+
+/*---------------Jacobi Algorithem---------*/
+
+/*---------------------------PYTHON C API-----------------------------*/
 /*Create PyCentroids matrix*/
 PyObject* cCentroidsToPy(){
     int i;
@@ -168,7 +308,6 @@ PyObject* cCentroidsToPy(){
 }
 /*Main Function of Kmeans Algorithem .*/
 static PyObject* kmeans() {
-    printf("Enters!");
     int i;
     int idx;
     /*Asserts*/
@@ -249,7 +388,7 @@ free(count);
 return pyCentroids;
 }
 
-/*the func that operates when we call the mykmeanssp module from python, the fuction will get the cmd arguments that we proccesed in python and call the main function*/
+/*the func that operates when we call the mykmeanssp module from python, the fuction will get the cmd arguments that we proccesed in python*/
 
 static PyObject* fit(PyObject* Py_UNUSED(self), PyObject* args){
     /* passing arguments from py- K,num of rows, num of cols, max_iter, epsilon, data and initial centroinds*/

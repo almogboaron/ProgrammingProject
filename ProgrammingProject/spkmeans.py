@@ -72,8 +72,8 @@ def main(arr):
 
     # Cases Functions
     if(goal.val == 3):
-        newCentroids = spkmeansmodule.spk()
-        kmeans(newCentroids)
+        U = spkmeansmodule.spk()
+        kmeans(U)
 
     elif(goal.val == 2):
         spkmeansmodule.wam()
