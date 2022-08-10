@@ -1,5 +1,15 @@
 
 # ProgrammingProject FinalEx :
+Missons Until 12.8 : 
+  ---------------
+- [ ] Main for C
+- [ ] Jacobi
+- [ ] Python C Api
+- [ ] Check Errors in Ex2 and Correct Tham. - Found a rounding effect at pp_kmeans.py changed to format .4
+- [ ] Teseters for all functions
+
+
+
 Missons Until 1.8 :
 -------------------
 - [x] Implement Choosing CMD for Python.
