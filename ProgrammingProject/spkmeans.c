@@ -1,5 +1,5 @@
 #define PY_SSIZE_T_CLEAN
-#include <Python.h>
+#include <Python/Python.h>
 
 #include <stdio.h>
 #include <math.h>
@@ -12,15 +12,13 @@
 
 /*Declorations*/
 int K;
-char* filename_in;
-char* filename_out;
-int max_iter;
+char* filename;
+int max_iter = 300;
 int n;
 int d;
-double EPSILON = 0.001;
+double EPSILON = 0;
 int iter_num = 0;
 int convergenceCount;
-int countcols=0;
 double delta;
 int* count;
 
@@ -52,6 +50,10 @@ double** lnormAloc;
 PyObject* data_arr;
 PyObject* centroid_arr;
 
+/*Vectors matrix*/
+double* vectors;
+double** vectorsAloc;
+
 /*define assert with message*/
 #define assert__(x) for (;!(x);assert(x))
 
@@ -72,19 +74,69 @@ void Init_Centroids(){
     }
 }
 
-/*Function Read PythonData From List of Lists (Matrix) and initialize C Matrix (n*d) of Information*/
-void init_DataMat(){
-    int i;
-    int j;
+/* Function Cols Dims. */
+int numOfCols(){
+    int countcols=0;
+    char ch;
+    FILE *fp = fopen(filename,"r");
+    assert__(fp!=NULL){
+        printf("An Error Has Occurred");
+    }
 
-    for(i=0;i<n;i++){
-        for(j=0;j<d;j++){
-            data[i*d+j] = PyFloat_AsDouble(PyList_GetItem(PyList_GetItem(data_arr,i),j));
+    while(!feof(fp)){
+        ch = fgetc(fp);
+        if(ch == ','){
+            countcols++;
+        }
+        if(ch=='\n'){break;}
+    }
+
+    countcols++;
+    fclose(fp);
+    return countcols;
+
+}
+
+/*Counting Rows Dims.*/
+int numbOfRows(){
+    char ch ;
+    int countrows=0;
+    FILE *fp = fopen(filename,"r");
+    assert__(fp!=NULL){
+        printf("An Error Has Occurred");
+    }
+
+    while(!feof(fp)){
+        ch = fgetc(fp);
+        if(ch == '\n'){
+            countrows++;
         }
     }
+    fclose(fp);
+    return countrows;
+}
+
+/*reads file and initialize data matrix*/
+void init_DataMat(){
+    FILE* fp;
+    int i,j;
+
     /*Initializing Pointer to Data Mat (k*d) (Or Vectors X1,...Xn == R1....Rn)*/
     for( i=0; i<n ; i++){
         dataAloc[i] = data + i*d ;
+    }
+
+    /*Initialize Data Matrix( Data Array n*d);*/
+    fp = fopen(filename,"r");
+    assert__(fp!=NULL){
+        printf("An Error Has Occurred");
+    }
+
+    for(i=0;i<n;i++){
+        for(j=0;j<d;j++){
+            fscanf(fp,"%lf",&dataAloc[i][j]);
+            fgetc(fp);
+        }
     }
 }
 
@@ -170,7 +222,7 @@ double norm2(int i, int j){
     }
 
     for(k=0;k<n;k++){
-        res+=pow(dataAloc[i][k]-dataAloc[j][k],2)
+        res+=pow(dataAloc[i][k]-dataAloc[j][k],2);
     }
 
     return sqrt(res);
@@ -221,7 +273,7 @@ void ddgInit(){
     /*Implementation*/
     for(i=0;i<n;i++){
         for(z=0;z<n;z++){
-            ddgAloc[i][i] += wamAloc[i][z]
+            ddgAloc[i][i] += wamAloc[i][z];
         }
     }
 }
@@ -253,6 +305,8 @@ void MatSubEye( double** matRes){
 /*Lnorm Implementation*/
 void lnormInit(){
     int i;
+    double* res;
+    double** resAloc;
     /*Initialize*/
     lnorm = calloc(n*n,sizeof(double));
     assert__(lnorm!=NULL){
@@ -277,7 +331,7 @@ void lnormInit(){
 
     /*Implementation*/
     for(i=0;i<n;i++){
-        ddgAlloc[i][i] = 1/sqrt(ddgAloc[i][i]);
+        ddgAloc[i][i] = 1/sqrt(ddgAloc[i][i]);
     }
     MatMulti(wamAloc,ddgAloc,resAloc);
     MatMulti(ddgAloc,resAloc,lnormAloc);
@@ -289,31 +343,28 @@ void lnormInit(){
 
 /*---------------------------PYTHON C API-----------------------------*/
 /*Create PyCentroids matrix*/
-PyObject* cCentroidsToPy(){
+PyObject* cMatToPy(double** mat){
     int i;
     int j;
-    PyObject* pyCentroids = PyList_New(0);
+    PyObject* pyMat = PyList_New(0);
     for(i=0;i<K;i++){
-        PyObject* PyCentroid = PyList_New(0);
+        PyObject* PyPoint = PyList_New(0);
         for(j=0;j<d;j++){
-            if(PyList_Append(PyCentroid,PyFloat_FromDouble(CenetroidAloc[i][j]))==-1){
+            if(PyList_Append(PyPoint,PyFloat_FromDouble(mat[i][j]))==-1){
                 return NULL;
             }
         }
-        if(PyList_Append(pyCentroids,PyCentroid)==-1){
+        if(PyList_Append(pyMat,PyPoint)==-1){
             return NULL;
         }
     }
-    return pyCentroids;
+    return pyMat;
 }
 /*Main Function of Kmeans Algorithem .*/
 static PyObject* kmeans() {
     int i;
     int idx;
-    /*Asserts*/
-    assert__(K<=n){
-        printf("Invalid Input!");
-    }
+
     /*Initialization*/
     ClusterSum = calloc(K*d,sizeof(double));
     assert__(ClusterSum!=NULL){
@@ -340,7 +391,6 @@ static PyObject* kmeans() {
         printf("An Error Has Occurred");
     }
 
-    init_DataMat();
     Init_Centroids();
     init_Clusters();
 
@@ -375,7 +425,7 @@ static PyObject* kmeans() {
         iter_num++;
     }
 /*Update pyCentroids And return that object*/
-PyObject* pyCentroids = cCentroidsToPy();
+PyObject* pyCentroids = cMatToPy(CenetroidAloc);
 
 /*Free Memory*/
 free(ClusterSum);
@@ -388,11 +438,48 @@ free(count);
 return pyCentroids;
 }
 
+void read_file(){
+    n = numbOfRows();
+    assert__(K<=n){
+        printf("Invalid Input!");
+    }
+    d = numOfCols();
+    init_DataMat();
+}
+
+static PyObject* spk() {
+    read_file();
+    /*Asserts*/
+    assert__(K<=n){
+        printf("Invalid Input!");
+    }
+    wamInit();
+    lnormInit();
+    if (K == 0){
+        K = Eigngap_Heuristic(); /*need to be implemented*/
+    }
+    jacobi(); /*need to be implemented*/
+    PyObject* U = cMatToPy(vectorsAloc);
+    return U;
+}
+
+void print_output(double** mat){
+    int i,j;
+    for(i=0; i<n ;i++){
+        for(j=0; j<n; j++){
+            /*Not Last Column*/
+            if(j<n-1){printf("%.4f,",mat[i][j]);}
+            else    {printf("%.4f",mat[i][j]);}
+        }
+        printf("%s","\n");
+    }
+}
+
 /*the func that operates when we call the mykmeanssp module from python, the fuction will get the cmd arguments that we proccesed in python*/
 
 static PyObject* fit(PyObject* Py_UNUSED(self), PyObject* args){
-    /* passing arguments from py- K,num of rows, num of cols, max_iter, epsilon, data and initial centroinds*/
-    if (!PyArg_ParseTuple(args,"iiiidO!O!", &K, &n, &d, &max_iter, &EPSILON,&PyList_Type ,&data_arr,&PyList_Type, &centroid_arr)){
+    /* data and initial centroinds*/
+    if (!PyArg_ParseTuple(args,"O!O!", &PyList_Type ,&data_arr,&PyList_Type, &centroid_arr)){
         return NULL;
     }
 
@@ -400,20 +487,73 @@ static PyObject* fit(PyObject* Py_UNUSED(self), PyObject* args){
     /* returning double or array*/
 }
 
+static PyObject* spkC(PyObject* self, PyObject* args){
+    if(!PyArg_ParseTuple(args,"Oi",&filename,&K)){
+        return NULL;
+    }
+    return spk();
+}
+
+static PyObject* wamC(PyObject* self, PyObject* args){
+    if(!PyArg_ParseTuple(args,"O",&filename)){
+        return NULL;
+    }
+    read_file();
+    wamInit();
+    print_output(wamAloc);
+    free(data);
+    free(dataAloc);
+    free(wam);
+    free(wamAloc);
+    return 0;
+}
+
+static PyObject* ddgC(PyObject* self, PyObject* args){
+    if(!PyArg_ParseTuple(args,"O",&filename)){
+        return NULL;
+    }
+    read_file();
+    ddgInit();
+    print_output(ddgAloc);
+    free(data);
+    free(dataAloc);
+    free(ddg);
+    free(ddgAloc);
+    return 0;
+}
+
+static PyObject* lnormC(PyObject* self, PyObject* args){
+    if(!PyArg_ParseTuple(args,"O",&filename)){
+        return NULL;
+    }
+    read_file();
+    lnormInit();
+    print_output(lnormAloc);
+    free(data);
+    free(dataAloc);
+    free(lnorm);
+    free(lnormAloc);
+    return 0;
+}
+
 /* declaring the kmeans function */
 static PyMethodDef capiMethods[] = {
         {"fit", (PyCFunction) fit, METH_VARARGS, PyDoc_STR("kmeans algorithem")},
+        {"spkC", (PyCFunction) spkC, METH_VARARGS, PyDoc_STR("spk algorithem")},
+        {"wamC", (PyCFunction) wamC, METH_VARARGS, PyDoc_STR("Weighted Adjacency Matrix")},
+        {"ddgC", (PyCFunction) ddgC, METH_VARARGS, PyDoc_STR("Diagonal Degree Matrix")},
+        {"lnormC",(PyCFunction) lnormC, METH_VARARGS, PyDoc_STR("Normalized Graph Laplacian")},
                  {NULL,NULL,0,NULL}
 };
 
 /*defining the module*/
 static struct PyModuleDef moduledef = {
-        PyModuleDef_HEAD_INIT, "mykmeanssp", NULL, -1, capiMethods
+        PyModuleDef_HEAD_INIT, "spkmeansmodule", NULL, -1, capiMethods
 };
 
 /* creating the module */
 PyMODINIT_FUNC
-PyInit_mykmeanssp(void)
+PyInit_spkmeansmodule(void)
 {
     PyObject *m;
     m = PyModule_Create(&moduledef);

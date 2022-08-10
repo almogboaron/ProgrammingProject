@@ -14,7 +14,7 @@ class Goal(enum.Enum):
     jacobi = 5
 
 # Kmeans++ Func for (include kmeans through C)
-def kmeans( matrix ):
+def kmeans(matrix):
     # kmeans++ implementation
     matrix = np.matrix(matrix)
     centroids = np.zeros(shape=(matrix.shape[1], matrix.shape[1]))
@@ -34,12 +34,12 @@ def kmeans( matrix ):
         centroids[i] = matrix[selected]  # choosing the data frame with max likelihood to be chosen
         lst_choice.append(selected)
 
-    # Orginazing Data for C function
+    # Organizing Data for C function
     centroids = centroids.tolist()
     matrix = matrix.tolist()
 
-    # Input K,NumOfRows,NumOfCols,max_iter,epsilon,Datalist,CentroidList
-    new_Centroids = spkmeansmodule.kmeans_fit(matrix.shape[1], matrix.shape[0], matrix.shape[1], 300, 0, matrix, centroids)
+    # Datalist,CentroidList
+    new_Centroids = spkmeansmodule.kmeans_fit(matrix, centroids)
 
     # toString
     result = str(lst_choice).strip("[]").replace(" ", "") + "\n"
@@ -66,26 +66,27 @@ def main(arr):
 
     # Asserts :
     assert file_name[-4:] == ".txt" or file_name[-4:] == ".csv", "Invalid Input!"
+    assert K >= 0
 
     # Numpy Random Seed :
     np.random.seed(0)
 
     # Cases Functions
-    if(goal.val == 3):
-        U = spkmeansmodule.spk()
+    if(goal.value == 1):
+        U = spkmeansmodule.spkC(file_name,K)
         kmeans(U)
 
-    elif(goal.val == 2):
-        spkmeansmodule.wam()
+    elif(goal.value == 2):
+        spkmeansmodule.wamC(file_name)
 
-    elif(goal.val == 3):
-        spkmeansmodule.ddg()
+    elif(goal.value == 3):
+        spkmeansmodule.ddgC(file_name)
 
-    elif(goal.val == 4):
-        spkmeansmodule.lnorm()
+    elif(goal.value == 4):
+        spkmeansmodule.lnormC(file_name)
 
-    elif(goal.val == 5):
-        spkmeansmodule.jacobi()
+    elif(goal.value == 5):
+        spkmeansmodule.jacobi(file_name)
 
 
 if __name__== "__main__":
