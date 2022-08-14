@@ -57,22 +57,8 @@ double** vectorsAloc;
 /*define assert with message*/
 #define assert__(x) for (;!(x);assert(x))
 
-/*Function Initalizeation Centroids -> Matrix Formation as first k data points */
-void Init_Centroids(){
-    int i;
-    int j;
 
-    /*Initializing Centroids Mat*/
-    for(i=0;i<K;i++){
-        for(j=0;j<d;j++){
-            Centroids[i*d+j] = PyFloat_AsDouble(PyList_GetItem(PyList_GetItem(centroid_arr,i),j));
-        }
-    }
-    /*Initializing Pointer to Centroids Mat (k*d)*/
-    for(i=0; i < K ; i++){
-        CenetroidAloc[i] = Centroids + i*d ;
-    }
-}
+/* -------------------------------- Handling Data ------------------- */
 
 /* Function Cols Dims. */
 int numOfCols(){
@@ -121,6 +107,16 @@ void init_DataMat(){
     FILE* fp;
     int i,j;
 
+    /*Initialization*/
+    data = calloc(n*d,sizeof(double));
+    assert__(data!=NULL){
+        printf("An Error Has Occurred");
+    }
+    dataAloc = calloc(n,sizeof(double));
+    assert__(dataAloc!=NULL){
+        printf("An Error Has Occurred");
+    }
+
     /*Initializing Pointer to Data Mat (k*d) (Or Vectors X1,...Xn == R1....Rn)*/
     for( i=0; i<n ; i++){
         dataAloc[i] = data + i*d ;
@@ -140,6 +136,34 @@ void init_DataMat(){
     }
 }
 
+void read_file(){
+    n = numbOfRows();
+    assert__(K<=n){
+        printf("Invalid Input!");
+    }
+    d = numOfCols();
+    init_DataMat();
+}
+
+/* ---------------------------------- k-means functions ----------------------------------*/
+
+/*Function Initalizeation Centroids -> Matrix Formation as first k data points */
+void Init_Centroids(){
+    int i;
+    int j;
+
+    /*Initializing Centroids Mat*/
+    for(i=0;i<K;i++){
+        for(j=0;j<d;j++){
+            Centroids[i*d+j] = PyFloat_AsDouble(PyList_GetItem(PyList_GetItem(centroid_arr,i),j));
+        }
+    }
+    /*Initializing Pointer to Centroids Mat (k*d)*/
+    for(i=0; i < K ; i++){
+        CenetroidAloc[i] = Centroids + i*d ;
+    }
+}
+
 /*Initializeation of ClusterSum*/
 void init_Clusters(){
     int i;
@@ -154,7 +178,7 @@ void init_Clusters(){
     }
 }
 
-/*Sum Data Point with apropriate Cluster*/
+/*Sum Data Point with appropriate Cluster*/
 void SumWithCluster(double* clusterSum , double* dataPoint){
     int i;
     for(i=0; i<d; i++){
@@ -162,7 +186,7 @@ void SumWithCluster(double* clusterSum , double* dataPoint){
     }
 }
 
-/* Sum DataPoint with Apropritate Cluster Sum return idx of cluster*/
+/* Sum DataPoint with Appropriate Cluster Sum return idx of cluster*/
 int assign(double *datapoint){
     double minDist = DBL_MAX;
     double norm=0 ;
@@ -211,6 +235,7 @@ double update_centroid(double* Centroid , double* ClusterSum){
     }
     return sqrt(norm);
 }
+
 /*-------------------Wam-------------------*/
 /*Norm Implementation*/
 double norm2(int i, int j){
@@ -343,11 +368,11 @@ void lnormInit(){
 
 /*---------------------------PYTHON C API-----------------------------*/
 /*Create PyCentroids matrix*/
-PyObject* cMatToPy(double** mat){
+PyObject* cMatToPy(double** mat, int rows){
     int i;
     int j;
     PyObject* pyMat = PyList_New(0);
-    for(i=0;i<K;i++){
+    for(i=0;i<rows;i++){
         PyObject* PyPoint = PyList_New(0);
         for(j=0;j<d;j++){
             if(PyList_Append(PyPoint,PyFloat_FromDouble(mat[i][j]))==-1){
@@ -380,14 +405,6 @@ static PyObject* kmeans() {
     }
     CenetroidAloc = calloc(K,sizeof(double));
     assert__(CenetroidAloc!=NULL){
-        printf("An Error Has Occurred");
-    }
-    data = calloc(n*d,sizeof(double));
-    assert__(data!=NULL){
-        printf("An Error Has Occurred");
-    }
-    dataAloc = calloc(n,sizeof(double));
-    assert__(dataAloc!=NULL){
         printf("An Error Has Occurred");
     }
 
@@ -425,7 +442,7 @@ static PyObject* kmeans() {
         iter_num++;
     }
 /*Update pyCentroids And return that object*/
-PyObject* pyCentroids = cMatToPy(CenetroidAloc);
+PyObject* pyCentroids = cMatToPy(CenetroidAloc,K);
 
 /*Free Memory*/
 free(ClusterSum);
@@ -438,28 +455,26 @@ free(count);
 return pyCentroids;
 }
 
-void read_file(){
-    n = numbOfRows();
-    assert__(K<=n){
-        printf("Invalid Input!");
-    }
-    d = numOfCols();
-    init_DataMat();
-}
-
 static PyObject* spk() {
+    /*getting the data from the file*/
     read_file();
     /*Asserts*/
     assert__(K<=n){
         printf("Invalid Input!");
     }
-    wamInit();
-    lnormInit();
+    wamInit(); /*step 1*/
+    lnormInit(); /*step 2*/
+    /*step 3*/
     if (K == 0){
-        K = Eigngap_Heuristic(); /*need to be implemented*/
+        /*K = Eigngap_Heuristic(); need to be implemented*/
     }
-    jacobi(); /*need to be implemented*/
-    PyObject* U = cMatToPy(vectorsAloc);
+    /*step 4*/
+    /*jacobi(); need to be implemented*/
+
+    /*step 5 - renormalize U's rows - NEED TO ADD*/
+
+    /*step 6 - passing the data back to python*/
+    PyObject* U = cMatToPy(vectorsAloc,n);
     return U;
 }
 
@@ -475,90 +490,36 @@ void print_output(double** mat){
     }
 }
 
-/*the func that operates when we call the mykmeanssp module from python, the fuction will get the cmd arguments that we proccesed in python*/
-
-static PyObject* fit(PyObject* Py_UNUSED(self), PyObject* args){
-    /* data and initial centroinds*/
-    if (!PyArg_ParseTuple(args,"O!O!", &PyList_Type ,&data_arr,&PyList_Type, &centroid_arr)){
-        return NULL;
+int main(int argc, char *argv[]) {
+    assert__(argc == 3){
+        printf("Invalid Input!");
     }
-
-    return kmeans();
-    /* returning double or array*/
-}
-
-static PyObject* spkC(PyObject* self, PyObject* args){
-    if(!PyArg_ParseTuple(args,"Oi",&filename,&K)){
-        return NULL;
-    }
-    return spk();
-}
-
-static PyObject* wamC(PyObject* self, PyObject* args){
-    if(!PyArg_ParseTuple(args,"O",&filename)){
-        return NULL;
-    }
+    filename = argv[2];
     read_file();
-    wamInit();
-    print_output(wamAloc);
+
+    if(strcmp(argv[1],"wam") == 0){
+        wamInit();
+        print_output(wamAloc);
+    }
+    else if(strcmp(argv[1],"ddg") == 0){
+        ddgInit();
+        print_output(ddgAloc);
+    }
+    else if(strcmp(argv[1],"lnorm") == 0){
+        lnormInit();
+        print_output(lnormAloc);
+    }
+
     free(data);
     free(dataAloc);
     free(wam);
     free(wamAloc);
-    return 0;
-}
-
-static PyObject* ddgC(PyObject* self, PyObject* args){
-    if(!PyArg_ParseTuple(args,"O",&filename)){
-        return NULL;
-    }
-    read_file();
-    ddgInit();
-    print_output(ddgAloc);
-    free(data);
-    free(dataAloc);
     free(ddg);
     free(ddgAloc);
-    return 0;
-}
-
-static PyObject* lnormC(PyObject* self, PyObject* args){
-    if(!PyArg_ParseTuple(args,"O",&filename)){
-        return NULL;
-    }
-    read_file();
-    lnormInit();
-    print_output(lnormAloc);
-    free(data);
-    free(dataAloc);
     free(lnorm);
     free(lnormAloc);
     return 0;
 }
 
-/* declaring the kmeans function */
-static PyMethodDef capiMethods[] = {
-        {"fit", (PyCFunction) fit, METH_VARARGS, PyDoc_STR("kmeans algorithem")},
-        {"spkC", (PyCFunction) spkC, METH_VARARGS, PyDoc_STR("spk algorithem")},
-        {"wamC", (PyCFunction) wamC, METH_VARARGS, PyDoc_STR("Weighted Adjacency Matrix")},
-        {"ddgC", (PyCFunction) ddgC, METH_VARARGS, PyDoc_STR("Diagonal Degree Matrix")},
-        {"lnormC",(PyCFunction) lnormC, METH_VARARGS, PyDoc_STR("Normalized Graph Laplacian")},
-                 {NULL,NULL,0,NULL}
-};
 
-/*defining the module*/
-static struct PyModuleDef moduledef = {
-        PyModuleDef_HEAD_INIT, "spkmeansmodule", NULL, -1, capiMethods
-};
 
-/* creating the module */
-PyMODINIT_FUNC
-PyInit_spkmeansmodule(void)
-{
-    PyObject *m;
-    m = PyModule_Create(&moduledef);
-    if(!m) {
-        return NULL;
-    }
-    return m;
-}

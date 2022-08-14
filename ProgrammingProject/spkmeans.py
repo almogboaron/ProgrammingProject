@@ -39,7 +39,7 @@ def kmeans(matrix):
     matrix = matrix.tolist()
 
     # Datalist,CentroidList
-    new_Centroids = spkmeansmodule.kmeans_fit(matrix, centroids)
+    new_Centroids = spkmeansmodule.fit(matrix, centroids)
 
     # toString
     result = str(lst_choice).strip("[]").replace(" ", "") + "\n"
@@ -66,28 +66,28 @@ def main(arr):
 
     # Asserts :
     assert file_name[-4:] == ".txt" or file_name[-4:] == ".csv", "Invalid Input!"
-    assert K >= 0
+    assert K >= 0, "Invalid Input!"
 
     # Numpy Random Seed :
     np.random.seed(0)
 
     # Cases Functions
-    if(goal.value == 1):
-        U = spkmeansmodule.spkC(file_name,K)
+    if goal.value == 1:
+        U = spkmeansmodule.spkC(file_name, K)
         kmeans(U)
 
-    elif(goal.value == 2):
+    elif goal.value == 2:
         spkmeansmodule.wamC(file_name)
 
-    elif(goal.value == 3):
+    elif goal.value == 3:
         spkmeansmodule.ddgC(file_name)
 
-    elif(goal.value == 4):
+    elif goal.value == 4:
         spkmeansmodule.lnormC(file_name)
 
-    elif(goal.value == 5):
+    elif goal.value == 5:
         spkmeansmodule.jacobi(file_name)
 
 
-if __name__== "__main__":
+if __name__ == "__main__":
     main(sys.argv)
