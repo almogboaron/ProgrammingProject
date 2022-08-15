@@ -1,12 +1,13 @@
 
 # ProgrammingProject FinalEx :
-Missons Until 12.8 : 
+Missons Until 19.8 : 
   ---------------
-- [ ] Main for C
-- [ ] Jacobi
-- [ ] Python C Api
-- [ ] Check Errors in Ex2 and Correct Tham. - Found a rounding effect at pp_kmeans.py changed to format .4
-- [ ] Teseters for all functions
+- [x] Main for C.
+- [ ] Jacobi.
+- [x] Python C Api.
+- [ ] Check Errors in Ex2 and Correct Tham. - Found a rounding effect at pp_kmeans.py changed to format .4.
+- [ ] Teseters for all functions.
+- [ ] Full Run.
 
 
 
@@ -16,7 +17,6 @@ Missons Until 1.8 :
 - [x] Implement SubClass enum for Python.
 - [x] Implement Switch Cases for Python.
 - [x] Implement Python C API Functions in Python.
-- [ ] Check Errors in Ex2 and Correct Tham. - Found a rounding effect at pp_kmeans.py changed to format .4
 
 ---------------------
 
