@@ -11,12 +11,13 @@
 
 
 /*Declorations*/
-int K;
+int K=0;
 char* filename;
 int max_iter = 300;
 int n;
 int d;
 double EPSILON = 0;
+const double eps = pow(10,-5);
 int iter_num = 0;
 int convergenceCount;
 double delta;
@@ -46,13 +47,26 @@ double** ddgAloc;
 double* lnorm;
 double** lnormAloc;
 
+/*All eigenVectors*/
+double* V;
+double** VAloc;
+
+/*k eigenVectors*/
+double* U;
+double** UAloc;
+
+/*Normalized by Rows U -> T*/
+double* T;
+double* TAloc;
+
+/*Eigen Values and there indexes*/
+double* EigenValues;
+int* indexs;
+
 /*Python Objects*/
 PyObject* data_arr;
 PyObject* centroid_arr;
 
-/*Vectors matrix*/
-double* vectors;
-double** vectorsAloc;
 
 /*define assert with message*/
 #define assert__(x) for (;!(x);assert(x))
@@ -134,6 +148,7 @@ void init_DataMat(){
             fgetc(fp);
         }
     }
+    fclose(fp);
 }
 
 void read_file(){
@@ -246,10 +261,9 @@ double norm2(int i, int j){
         return 0;
     }
 
-    for(k=0;k<n;k++){
+    for(k=0;k<d;k++){
         res+=pow(dataAloc[i][k]-dataAloc[j][k],2);
     }
-
     return sqrt(res);
 }
 
@@ -276,6 +290,7 @@ void wamInit(){
             wamAloc[i][j] = exp(-(norm2(i,j)/2));
         }
     }
+    free(data);free(dataAloc);
 }
 
 /*------------------Diagonal Degree Matrix--------------*/
@@ -301,6 +316,7 @@ void ddgInit(){
             ddgAloc[i][i] += wamAloc[i][z];
         }
     }
+    free(wamAloc);free(wam);
 }
 
 /*---------------The Normalized Graph Laplacian---------*/
@@ -362,11 +378,198 @@ void lnormInit(){
     MatMulti(ddgAloc,resAloc,lnormAloc);
     MatSubEye(lnormAloc);
     free(res);free(resAloc);
+    free(ddg);free(ddgAloc);
 }
 
 /*---------------Jacobi Algorithem---------*/
+/*Jacobi Helper Functions*/
+/*Initalize PAloc*/
+void initPAloc(double s,double c, int piv_i , int piv_j, double** PAloc){
+    int i,j;
+    for(i=0;i<n;i++){
+        for(j=0;j<n;j++){
+            if(i==j){
+                PAloc[i][j]=1;
+            }else{
+                PAloc[i][j]=0;
+            }
+        } 
+    }
+    PAloc[piv_i][piv_i] = c;
+    PAloc[piv_j][piv_j] = c;
+    PAloc[piv_i][piv_j] = -s;
+    PAloc[piv_j][piv_i] = s;
+}
+
+/*Sign Function*/
+int sign(double teta){
+    if(teta>=0){
+        return 1;
+    }else{
+        return -1;
+    }
+}
+
+/*Off function*/
+double offMat(double** mat){
+    int i,j;
+    double sum=0;
+    for(i=0;i<n;i++){
+        for(j=0;j<i;j++){
+            sum+=pow(mat[i][j],2);
+        }
+    }
+}
+
+/*Compare function - Reversed*/
+int cmpfuncindex (const void * a, const void * b) {
+   return ( EigenValues[*(int*)b] - EigenValues[*(int*)a] );
+}
+
+/*Compare function - Reversed*/
+int cmpfunc (const void * a, const void * b) {
+   return ( *(double*)b - *(double*)a );
+}
+
+/*Eigengap Heuristic*/
+void EigengapHeuristic(){
+    double sigma;
+    int i,res;
+    double max = -DBL_MAX
+    
+/*Finidng k*/
+    for(i=0; i<floor(n/2);i++){
+        sigma = abs(EigenValues[i]-EigenValues[i+1])
+        if(max < sigma){
+            max = sigma;
+            K = i+1;  /*Could Be A BUG************************/
+        }
+    }
+}
+
+/*Jacobi Main Function - Creates V*/
+void jacobiInit(){
+    int k,r,i,piv_i,j,piv_j;
+    double teta, t, s, c, temp, max, off_prev,off_after, P*, PAloc**,res*,resAloc**,tempmat*,tempMat**;
+
+    /* Creating mat*/
+    P = calloc(n*n,sizeof(double));
+    assert__(P!=NULL){
+        printf("An Error Has Occurred");
+    }
+    PAloc = calloc(n,sizeof(double*));
+    assert__(PAloc!=NULL){
+        printf("An Error Has Occurred");
+    }
+    V = calloc(n*n,sizeof(double));
+    assert__(V!=NULL){
+        printf("An Error Has Occurred");
+    }
+    VAloc = calloc(n,sizeof(double*));
+    assert__(VAloc!=NULL){
+        printf("An Error Has Occurred");
+    }
+    res = calloc(n*n,sizeof(double));
+    assert__(res!=NULL){
+        printf("An Error Has Occurred");
+    }
+    resAloc = calloc(n,sizeof(double*));
+    assert__(resAloc!=NULL){
+        printf("An Error Has Occurred");
+    }
+    for(i=0;i<n;i++){
+        PAloc[i] = P + i*n;
+        VAloc[i] = V +i*n;
+        VAloc[i][i] = 1;
+        resAloc[i] = res +i*n;
+        resAloc[i][i] = 1;
+    }
+    
+    off_prev = offMat(lnromAloc);
+    /*Diagonalization*/
+    for(k=0;k<100;k++){
+        /*Pivot*/
+        max = -DBL_MAX;
+        for(i=0;i<n;i++){
+            for(j=0;j<i;j++){
+                if(max(max,lnormAloc[i][j])==lnormAloc[i][j]){
+                    piv_i = i; 
+                    piv_j = j;
+                }
+            }
+        }
+
+        /*c And t*/
+        teta = lnormAloc[piv_j][piv_j];
+        t = sign(teta)/(abs(teta) + sqrt(pow(teta,2)+1)); 
+        c = 1/sqrt(pow(t,2)+1);
+        s = c*t;
+
+        /*Initialize P*/
+        initPAloc(s, c, piv_i, piv_j, PAloc);
+
+        /*Transform lnorm | Temp used here to avoid overiding*/
+        for(r=0;r<n;r++){
+            if((r!=piv_i)&&(r!=piv_j)){
+                temp = lnormAloc[r][piv_i];
+                lnormAloc[r][piv_i] = c*lnormAloc[r][piv_i] - s*lnormAloc[r][piv_j];
+                lnormAloc[r][piv_j] = c*lnormAloc[r][piv_j] + s*temp;
+                lnormAloc[piv_i][r] = lnormAloc[r][piv_i];
+                lnormAloc[pib_j][r] = lnormAloc[r][piv_j];
+            }
+        }
+        temp = lnromAloc[piv_i][piv_i];
+        lnormAloc[piv_i][piv_i] = pow(c,2)*lnromAloc[piv_i][piv_i] + pow(s,2)*lnormAloc[piv_j][piv_j] - 2*s*c*lnromAloc[piv_i][piv_j];
+        lnormAloc[piv_j][piv_j] = pow(s,2)*temp + pow(c,2)*lnormAloc[piv_j][piv_j] + 2*s*c*lnromAloc[piv_i][piv_j];
+        lnromAloc[piv_i][piv_j] = 0;
+        lnromAloc[piv_j][piv_i] = 0;
+
+        /*Update V*/
+        MatMulti(VAloc,PAloc,resAloc);
+        tempMat = VAloc;
+        tempmat = V;
+        VALoc = resAloc;
+        V = res;
+        resAloc = tempMat;
+        res = tempmat;
+
+        /*Checking Convergence*/
+        off_after = offMat(lnromAloc);
+        if( (off_prev - off_after) < eps){break;}
+        off_prev = off_after;
+    }
+
+    /*Sorting EigenValues and indexes for matrix U*/
+    indexs = calloc(n,sizeof(int));
+    assert__(indexs!=NULL){
+        printf("An Error Has Occurred");
+    }
+    EigenValues = calloc(n,sizeof(double));
+    assert__(EigenValues!=NULL){
+        printf("An Error Has Occurred");
+    }
+    
+    /*Initializing*/
+    for(i=0;i<n;i++){
+        EigenValues[i] = lnormAloc[i][i];
+        indexes[i] = i;
+    }
+
+    /*Sorting indexes and values*/
+    qsort(indexes, n, sizeof(int), cmpfuncindex);
+    qsort(EigenValues,n,sizeof(double),cmpfunc);
+
+    /*EigengapHeuristic*/
+    if(K == 0){
+        EigengapHeuristic();
+    }
+    free(P);free(PAloc);
+    free(res);free(resAloc);
+    free(lnorm);free(lnormAloc);
+}
 
 /*---------------------------PYTHON C API-----------------------------*/
+
 /*Create PyCentroids matrix*/
 PyObject* cMatToPy(double** mat, int rows){
     int i;
@@ -385,6 +588,7 @@ PyObject* cMatToPy(double** mat, int rows){
     }
     return pyMat;
 }
+
 /*Main Function of Kmeans Algorithem .*/
 static PyObject* kmeans() {
     int i;
@@ -455,41 +659,120 @@ free(count);
 return pyCentroids;
 }
 
+/*spk Implemntation for Python*/
 static PyObject* spk() {
+    int i,j;
+    double norma;
+    PyObject* T_py;
+
     /*getting the data from the file*/
     read_file();
+    
     /*Asserts*/
     assert__(K<=n){
         printf("Invalid Input!");
     }
-    wamInit(); /*step 1*/
-    lnormInit(); /*step 2*/
+    
+    /*step 1*/
+    wamInit();
+
+    /*step 2*/
+    ddgInit();
+    lnormInit();
+
     /*step 3*/
-    if (K == 0){
-        /*K = Eigngap_Heuristic(); need to be implemented*/
+    jacobiInit();
+
+    /*step 4 - renormalize U's rows - NEED TO ADD*/
+    U = calloc(n*K,sizeof(double));
+    assert__(U!=NULL){
+        printf("An Error Has Occurred");
     }
-    /*step 4*/
-    /*jacobi(); need to be implemented*/
+    UAloc = calloc(n,sizeof(double*));
+    assert__(UAloc!=NULL){
+        printf("An Error Has Occurred");
+    }
+    /*Initialize UAloc*/
+    for(i=0;i<n;i++){
+        UAloc[i] = U +i*K;
+    }
+    
+    /*Initialize choesen EigenVectors by indexes*/
+    for(i=0;i<n;i++){
+        for(j=0;j<K;j++){
+            UAloc[i][j] = V[i][indexs[j]]; 
+        }
+    }
+    free(indexs);
+    free(V);free(VAloc);
+    
 
-    /*step 5 - renormalize U's rows - NEED TO ADD*/
+    /*Normaliazing*/
+    T = calloc(n*K,sizeof(double));
+    assert__(T!=NULL){
+        printf("An Error Has Occurred");
+    }
+    TAloc = calloc(n,sizeof(double*));
+    assert__(TAloc!=NULL){
+        printf("An Error Has Occurred");
+    }
+    for(i=0;i<n;i++){
+        TAloc[i] = T +i*K;
+    }
+    
+    /*Norma Function*/
+    for(i=0;i<n;i++){
+        norma =0;
+        for(j=0;j<K;j++){
+            norma+=pow(UAloc[i][j],2);
+        }
+        norma = sqrt(norma);
+        for(j=0;j<K;j++){
+            TAloc[i][j]=UAloc[i][j]/norma;
+        }
+    }
 
-    /*step 6 - passing the data back to python*/
-    PyObject* U = cMatToPy(vectorsAloc,n);
-    return U;
+    /*step 5 - passing the data back to python*/
+    T_py = cMatToPy(TAloc,n);
+    free(U);free(UAloc);
+    free(T);free(TAloc);
+    return T_py;
 }
 
-void print_output(double** mat){
+/*Prints Functions for Arrays and Matrix*/
+void print_output(double** mat,int r,int c){
     int i,j;
-    for(i=0; i<n ;i++){
-        for(j=0; j<n; j++){
+    for(i=0; i<r ;i++){
+        for(j=0; j<c; j++){
             /*Not Last Column*/
-            if(j<n-1){printf("%.4f,",mat[i][j]);}
+            if(j<c-1){printf("%.4f,",mat[i][j]);}
             else    {printf("%.4f",mat[i][j]);}
         }
         printf("%s","\n");
     }
 }
 
+void print_outputV(double** mat,int r,int c){
+    int i,j;
+    for(i=0; i<r ;i++){
+        for(j=0; j<c; j++){
+            /*Take the Index of the currect EigenValue*/
+            if(j<c-1){printf("%.4f,",mat[i][indexes[j]]);}
+            else    {printf("%.4f",mat[i][indexes[j]]);}
+        }
+        printf("%s","\n");
+    }
+}
+
+void print_outputArr(double* arr,int r){
+    int i;
+    for(i=0; i<r; i++){
+        if(j<r-1){printf("%.4f,",arr[i]);}
+        else    {printf("%.4f\n",arr[i]);}
+    }
+}
+
+/*Main Function for C*/
 int main(int argc, char *argv[]) {
     assert__(argc == 3){
         printf("Invalid Input!");
@@ -499,27 +782,33 @@ int main(int argc, char *argv[]) {
 
     if(strcmp(argv[1],"wam") == 0){
         wamInit();
-        print_output(wamAloc);
+        print_output(wamAloc,n,n);
+        free(wam);free(wamAloc);
     }
     else if(strcmp(argv[1],"ddg") == 0){
+        wamInit();
         ddgInit();
-        print_output(ddgAloc);
+        print_output(ddgAloc,n,n);
+        free(ddg);free(ddgAloc);
     }
     else if(strcmp(argv[1],"lnorm") == 0){
+        wamInit();
+        ddgInit();
         lnormInit();
-        print_output(lnormAloc);
+        print_output(lnormAloc,n,n);
+        free(lnorm);free(lnormAloc);
     }
-
-    free(data);
-    free(dataAloc);
-    free(wam);
-    free(wamAloc);
-    free(ddg);
-    free(ddgAloc);
-    free(lnorm);
-    free(lnormAloc);
+    else if(strcmp(argv[1],"jacobi")==0){
+        wamInit();
+        ddgInit();
+        lnormInit();
+        jacobiInit();
+        print_outputArr(EigenValues,n);
+        print_outputV(VAloc,n,n);
+        free(EigenValues);
+        free(indexs);
+        free(V);free(VAloc);
+    }
+    else{printf("Invalid Input!");}
     return 0;
 }
-
-
-
