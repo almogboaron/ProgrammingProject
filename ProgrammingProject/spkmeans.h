@@ -1,6 +1,4 @@
 /*vars*/
-PyObject* data_arr;
-PyObject* centroid_arr;
 int K;
 char* filename;
 double* data;
@@ -16,6 +14,13 @@ double** VAloc;
 double* EigenValues;
 int* indexs;
 int n;
+double* Centroids;
+double** CenetroidAloc;
+double* T;
+double** TAloc;
+int d;
+
+
 
 /*functions*/
 void read_file();

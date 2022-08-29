@@ -1,5 +1,4 @@
 #define PY_SSIZE_T_CLEAN
-#include <Python.h>
 
 #include <stdio.h>
 #include <math.h>
@@ -9,7 +8,6 @@
 #include <limits.h>
 #include <float.h>
 
-
 /*Declorations*/
 int K=0;
 char* filename;
@@ -17,7 +15,7 @@ int max_iter = 300;
 int n;
 int d;
 double EPSILON = 0;
-const double eps = pow(10,-5);
+const double eps =0.00001;
 int iter_num = 0;
 int convergenceCount;
 double delta;
@@ -57,23 +55,20 @@ double** UAloc;
 
 /*Normalized by Rows U -> T*/
 double* T;
-double* TAloc;
+double** TAloc;
 
 /*Eigen Values and there indexes*/
 double* EigenValues;
-int* indexs;
-
-/*Python Objects*/
-PyObject* data_arr;
-PyObject* centroid_arr;
-
+int* indexes;
 
 /*define assert with message*/
 #define assert__(x) for (;!(x);assert(x))
 
-
 /* -------------------------------- Handling Data ------------------- */
-
+int MAX(double x,double y){ 
+  return (x > y) ? x : y;
+  }
+  
 /* Function Cols Dims. */
 int numOfCols(){
     int countcols=0;
@@ -162,23 +157,6 @@ void read_file(){
 
 /* ---------------------------------- k-means functions ----------------------------------*/
 
-/*Function Initalizeation Centroids -> Matrix Formation as first k data points */
-void Init_Centroids(){
-    int i;
-    int j;
-
-    /*Initializing Centroids Mat*/
-    for(i=0;i<K;i++){
-        for(j=0;j<d;j++){
-            Centroids[i*d+j] = PyFloat_AsDouble(PyList_GetItem(PyList_GetItem(centroid_arr,i),j));
-        }
-    }
-    /*Initializing Pointer to Centroids Mat (k*d)*/
-    for(i=0; i < K ; i++){
-        CenetroidAloc[i] = Centroids + i*d ;
-    }
-}
-
 /*Initializeation of ClusterSum*/
 void init_Clusters(){
     int i;
@@ -260,7 +238,6 @@ double norm2(int i, int j){
     if(i==j){
         return 0;
     }
-
     for(k=0;k<d;k++){
         res+=pow(dataAloc[i][k]-dataAloc[j][k],2);
     }
@@ -419,6 +396,7 @@ double offMat(double** mat){
             sum+=pow(mat[i][j],2);
         }
     }
+    return sum;
 }
 
 /*Compare function - Reversed*/
@@ -434,12 +412,12 @@ int cmpfunc (const void * a, const void * b) {
 /*Eigengap Heuristic*/
 void EigengapHeuristic(){
     double sigma;
-    int i,res;
-    double max = -DBL_MAX
+    int i;
+    double max = -DBL_MAX;
     
 /*Finidng k*/
     for(i=0; i<floor(n/2);i++){
-        sigma = abs(EigenValues[i]-EigenValues[i+1])
+        sigma = abs(EigenValues[i]-EigenValues[i+1]);
         if(max < sigma){
             max = sigma;
             K = i+1;  /*Could Be A BUG************************/
@@ -450,7 +428,7 @@ void EigengapHeuristic(){
 /*Jacobi Main Function - Creates V*/
 void jacobiInit(){
     int k,r,i,piv_i,j,piv_j;
-    double teta, t, s, c, temp, max, off_prev,off_after, P*, PAloc**,res*,resAloc**,tempmat*,tempMat**;
+    double teta, t, s, c, temp, maxVal, off_prev,off_after, *P, **PAloc, *res, **resAloc, *tempmat, **tempMat;
 
     /* Creating mat*/
     P = calloc(n*n,sizeof(double));
@@ -485,14 +463,14 @@ void jacobiInit(){
         resAloc[i][i] = 1;
     }
     
-    off_prev = offMat(lnromAloc);
+    off_prev = offMat(lnormAloc);
     /*Diagonalization*/
     for(k=0;k<100;k++){
         /*Pivot*/
-        max = -DBL_MAX;
+        maxVal = -DBL_MAX;
         for(i=0;i<n;i++){
             for(j=0;j<i;j++){
-                if(max(max,lnormAloc[i][j])==lnormAloc[i][j]){
+                if(MAX(maxVal,lnormAloc[i][j])==lnormAloc[i][j]){
                     piv_i = i; 
                     piv_j = j;
                 }
@@ -515,33 +493,33 @@ void jacobiInit(){
                 lnormAloc[r][piv_i] = c*lnormAloc[r][piv_i] - s*lnormAloc[r][piv_j];
                 lnormAloc[r][piv_j] = c*lnormAloc[r][piv_j] + s*temp;
                 lnormAloc[piv_i][r] = lnormAloc[r][piv_i];
-                lnormAloc[pib_j][r] = lnormAloc[r][piv_j];
+                lnormAloc[piv_j][r] = lnormAloc[r][piv_j];
             }
         }
-        temp = lnromAloc[piv_i][piv_i];
-        lnormAloc[piv_i][piv_i] = pow(c,2)*lnromAloc[piv_i][piv_i] + pow(s,2)*lnormAloc[piv_j][piv_j] - 2*s*c*lnromAloc[piv_i][piv_j];
-        lnormAloc[piv_j][piv_j] = pow(s,2)*temp + pow(c,2)*lnormAloc[piv_j][piv_j] + 2*s*c*lnromAloc[piv_i][piv_j];
-        lnromAloc[piv_i][piv_j] = 0;
-        lnromAloc[piv_j][piv_i] = 0;
+        temp = lnormAloc[piv_i][piv_i];
+        lnormAloc[piv_i][piv_i] = pow(c,2)*lnormAloc[piv_i][piv_i] + pow(s,2)*lnormAloc[piv_j][piv_j] - 2*s*c*lnormAloc[piv_i][piv_j];
+        lnormAloc[piv_j][piv_j] = pow(s,2)*temp + pow(c,2)*lnormAloc[piv_j][piv_j] + 2*s*c*lnormAloc[piv_i][piv_j];
+        lnormAloc[piv_i][piv_j] = 0;
+        lnormAloc[piv_j][piv_i] = 0;
 
         /*Update V*/
         MatMulti(VAloc,PAloc,resAloc);
         tempMat = VAloc;
         tempmat = V;
-        VALoc = resAloc;
+        VAloc = resAloc;
         V = res;
         resAloc = tempMat;
         res = tempmat;
 
         /*Checking Convergence*/
-        off_after = offMat(lnromAloc);
+        off_after = offMat(lnormAloc);
         if( (off_prev - off_after) < eps){break;}
         off_prev = off_after;
     }
 
     /*Sorting EigenValues and indexes for matrix U*/
-    indexs = calloc(n,sizeof(int));
-    assert__(indexs!=NULL){
+    indexes = calloc(n,sizeof(int));
+    assert__(indexes!=NULL){
         printf("An Error Has Occurred");
     }
     EigenValues = calloc(n,sizeof(double));
@@ -570,27 +548,9 @@ void jacobiInit(){
 
 /*---------------------------PYTHON C API-----------------------------*/
 
-/*Create PyCentroids matrix*/
-PyObject* cMatToPy(double** mat, int rows){
-    int i;
-    int j;
-    PyObject* pyMat = PyList_New(0);
-    for(i=0;i<rows;i++){
-        PyObject* PyPoint = PyList_New(0);
-        for(j=0;j<d;j++){
-            if(PyList_Append(PyPoint,PyFloat_FromDouble(mat[i][j]))==-1){
-                return NULL;
-            }
-        }
-        if(PyList_Append(pyMat,PyPoint)==-1){
-            return NULL;
-        }
-    }
-    return pyMat;
-}
 
 /*Main Function of Kmeans Algorithem .*/
-PyObject* kmeans() {
+void kmeans() {
     int i;
     int idx;
 
@@ -603,16 +563,8 @@ PyObject* kmeans() {
     assert__(ClusterSumAloc!=NULL){
         printf("An Error Has Occurred");
     }
-    Centroids = calloc(K*d,sizeof(double));
-    assert__(Centroids!=NULL){
-        printf("An Error Has Occurred");
-    }
-    CenetroidAloc = calloc(K,sizeof(double));
-    assert__(CenetroidAloc!=NULL){
-        printf("An Error Has Occurred");
-    }
 
-    Init_Centroids();
+
     init_Clusters();
 
     count = calloc(K,sizeof(int));
@@ -645,25 +597,19 @@ PyObject* kmeans() {
         if (convergenceCount == K){break;}
         iter_num++;
     }
-/*Update pyCentroids And return that object*/
-PyObject* pyCentroids = cMatToPy(CenetroidAloc,K);
 
 /*Free Memory*/
 free(ClusterSum);
 free(ClusterSumAloc);
-free(Centroids);
-free(CenetroidAloc);
 free(data);
 free(dataAloc);
 free(count);
-return pyCentroids;
 }
 
 /*spk Implemntation for Python*/
-PyObject* spk() {
+void spk() {
     int i,j;
     double norma;
-    PyObject* T_py;
 
     /*getting the data from the file*/
     read_file();
@@ -700,10 +646,10 @@ PyObject* spk() {
     /*Initialize choesen EigenVectors by indexes*/
     for(i=0;i<n;i++){
         for(j=0;j<K;j++){
-            UAloc[i][j] = V[i][indexs[j]]; 
+            UAloc[i][j] = VAloc[i][indexes[j]]; 
         }
     }
-    free(indexs);
+    free(indexes);
     free(V);free(VAloc);
     
 
@@ -728,15 +674,12 @@ PyObject* spk() {
         }
         norma = sqrt(norma);
         for(j=0;j<K;j++){
-            TAloc[i][j]=UAloc[i][j]/norma;
+            TAloc[i][j] = UAloc[i][j]/norma;
         }
     }
 
     /*step 5 - passing the data back to python*/
-    T_py = cMatToPy(TAloc,n);
     free(U);free(UAloc);
-    free(T);free(TAloc);
-    return T_py;
 }
 
 /*Prints Functions for Arrays and Matrix*/
@@ -767,7 +710,7 @@ void print_outputV(double** mat,int r,int c){
 void print_outputArr(double* arr,int r){
     int i;
     for(i=0; i<r; i++){
-        if(j<r-1){printf("%.4f,",arr[i]);}
+        if(i<r-1){printf("%.4f,",arr[i]);}
         else    {printf("%.4f\n",arr[i]);}
     }
 }
@@ -806,7 +749,7 @@ int main(int argc, char *argv[]) {
         print_outputArr(EigenValues,n);
         print_outputV(VAloc,n,n);
         free(EigenValues);
-        free(indexs);
+        free(indexes);
         free(V);free(VAloc);
     }
     else{printf("Invalid Input!");}

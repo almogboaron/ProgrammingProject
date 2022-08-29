@@ -36,10 +36,9 @@ def kmeans(matrix):
 
     # Organizing Data for C function
     centroids = centroids.tolist()
-    matrix = matrix.tolist()
 
     # Datalist,CentroidList
-    new_Centroids = spkmeansmodule.fit(matrix, centroids)
+    new_Centroids = spkmeansmodule.fit(centroids)
 
     # toString
     result = str(lst_choice).strip("[]").replace(" ", "") + "\n"
