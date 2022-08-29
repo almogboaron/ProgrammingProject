@@ -1,14 +1,17 @@
 
 # ProgrammingProject FinalEx :
+Missons Until 3.9 : 
+  ---------------
+
+- [ ] Check Errors in Ex2 and Correct Tham. - Found a rounding effect at pp_kmeans.py changed to format .4.
+- [ ] Teseters for all functions.
+- [ ] Full Run.
+
 Missons Until 19.8 : 
   ---------------
 - [x] Main for C.
 - [x] Jacobi.
 - [x] Python C Api.
-- [ ] Check Errors in Ex2 and Correct Tham. - Found a rounding effect at pp_kmeans.py changed to format .4.
-- [ ] Teseters for all functions.
-- [ ] Full Run.
-
 
 
 Missons Until 1.8 :

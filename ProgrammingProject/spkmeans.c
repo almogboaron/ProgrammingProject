@@ -1,5 +1,5 @@
 #define PY_SSIZE_T_CLEAN
-#include <Python/Python.h>
+#include <Python.h>
 
 #include <stdio.h>
 #include <math.h>
@@ -590,7 +590,7 @@ PyObject* cMatToPy(double** mat, int rows){
 }
 
 /*Main Function of Kmeans Algorithem .*/
-static PyObject* kmeans() {
+PyObject* kmeans() {
     int i;
     int idx;
 
@@ -660,7 +660,7 @@ return pyCentroids;
 }
 
 /*spk Implemntation for Python*/
-static PyObject* spk() {
+PyObject* spk() {
     int i,j;
     double norma;
     PyObject* T_py;
