@@ -307,7 +307,7 @@ void ddgInit(){
             ddgAloc[i][i] += wamAloc[i][z];
         }
     }
-    free(wamAloc);free(wam);
+
 }
 
 /*---------------The Normalized Graph Laplacian---------*/
@@ -373,6 +373,7 @@ void lnormInit(){
     MatSubEye(lnormAloc);
     free(res);free(resAloc);
     free(ddg);free(ddgAloc);
+    free(wamAloc);free(wam);
 }
 
 /*---------------Jacobi Algorithem---------*/
@@ -391,8 +392,8 @@ void initPAloc(double s,double c, int piv_i , int piv_j, double** PAloc){
     }
     PAloc[piv_i][piv_i] = c;
     PAloc[piv_j][piv_j] = c;
-    PAloc[piv_i][piv_j] = -s;
-    PAloc[piv_j][piv_i] = s;
+    PAloc[piv_i][piv_j] = s;
+    PAloc[piv_j][piv_i] = -s;
 }
 
 /*Sign Function*/
@@ -436,7 +437,7 @@ void EigengapHeuristic(){
     
 /*Finidng k*/
     for(i=0; i<floor(n/2);i++){
-        sigma = abs(EigenValues[i]-EigenValues[i+1]);
+        sigma = fabs(EigenValues[i]-EigenValues[i+1]);
         if(max < sigma){
             max = sigma;
             K = i+1;  /*Could Be A BUG************************/
@@ -760,9 +761,7 @@ int main(int argc, char *argv[]) {
         free(lnorm);free(lnormAloc);
     }
     else if(strcmp(argv[1],"jacobi")==0){
-        wamInit();
-        ddgInit();
-        lnormInit();
+        lnormAloc = dataAloc;
         jacobiInit();
         print_outputArr(EigenValues,n);
         print_outputV(VAloc,n,n);
