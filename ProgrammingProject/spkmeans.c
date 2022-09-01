@@ -65,10 +65,23 @@ int* indexes;
 #define assert__(x) for (;!(x);assert(x))
 
 /* -------------------------------- Handling Data ------------------- */
-int MAX(double x,double y){ 
-  return (x > y) ? x : y;
+double MAX(double x,double y){ 
+  return (x >= y) ? x : y;
   }
-  
+
+/*Prints Functions for Arrays and Matrix*/
+void print_output(double** mat,int r,int c){
+    int i,j;
+    for(i=0; i<r ;i++){
+        for(j=0; j<c; j++){
+            /*Not Last Column*/
+            if(j<c-1){printf("%.4f,",mat[i][j]);}
+            else    {printf("%.4f",mat[i][j]);}
+        }
+        printf("%s","\n");
+    }
+}
+
 /* Function Cols Dims. */
 int numOfCols(){
     int countcols=0;
@@ -264,6 +277,7 @@ void wamInit(){
 
     for(i=0;i<n;i++){
         for(j=0;j<n;j++){
+            if(i==j){continue;}
             wamAloc[i][j] = exp(-(norm2(i,j)/2));
         }
     }
@@ -300,11 +314,14 @@ void ddgInit(){
 /*Matrix Multiplacation*/
 void MatMulti(double** mat1,double** mat2 , double** matRes){
     int i,j,k;
+    double sum=0;
     for(i=0;i<n;i++){
         for(j=0;j<n;j++){
             for(k=0;k<n;k++){
-                matRes[i][j]+=mat1[i][k]*mat2[k][j];
+                sum+=mat1[i][k]*mat2[k][j];
             }
+            matRes[i][j] = sum;
+            sum=0;
         }
     }
 }
@@ -392,8 +409,10 @@ double offMat(double** mat){
     int i,j;
     double sum=0;
     for(i=0;i<n;i++){
-        for(j=0;j<i;j++){
-            sum+=pow(mat[i][j],2);
+        for(j=0;j<n;j++){
+            if(i!=j){
+                sum+=pow(mat[i][j],2);
+            }
         }
     }
     return sum;
@@ -464,44 +483,55 @@ void jacobiInit(){
     }
     
     off_prev = offMat(lnormAloc);
+    
     /*Diagonalization*/
     for(k=0;k<100;k++){
         /*Pivot*/
         maxVal = -DBL_MAX;
         for(i=0;i<n;i++){
             for(j=0;j<i;j++){
-                if(MAX(maxVal,lnormAloc[i][j])==lnormAloc[i][j]){
+                if(MAX(maxVal,fabs(lnormAloc[i][j]))==fabs(lnormAloc[i][j])){
                     piv_i = i; 
                     piv_j = j;
+                    maxVal = fabs(lnormAloc[i][j]);
                 }
             }
         }
+        
+        printf("maxVal %f",maxVal);
+        printf("piv_i = %d, piv_j = %d\n",piv_i,piv_j);
+        printf("lnormIter%d before change\n\n",k);
+        print_output(lnormAloc,n,n);
 
-        /*c And t*/
-        teta = lnormAloc[piv_j][piv_j];
-        t = sign(teta)/(abs(teta) + sqrt(pow(teta,2)+1)); 
+        /*c And s*/
+        teta = (lnormAloc[piv_j][piv_j]-lnormAloc[piv_i][piv_i])/(2*lnormAloc[piv_i][piv_j]);
+        t = sign(teta)/(fabs(teta) + sqrt(pow(teta,2)+1)); 
         c = 1/sqrt(pow(t,2)+1);
         s = c*t;
-
-        /*Initialize P*/
-        initPAloc(s, c, piv_i, piv_j, PAloc);
-
+        printf("teta %f,t %f,c %f,s %f\n",teta,t,c,s);
+      
         /*Transform lnorm | Temp used here to avoid overiding*/
         for(r=0;r<n;r++){
             if((r!=piv_i)&&(r!=piv_j)){
                 temp = lnormAloc[r][piv_i];
-                lnormAloc[r][piv_i] = c*lnormAloc[r][piv_i] - s*lnormAloc[r][piv_j];
+                lnormAloc[r][piv_i] = c*temp - s*lnormAloc[r][piv_j];
                 lnormAloc[r][piv_j] = c*lnormAloc[r][piv_j] + s*temp;
                 lnormAloc[piv_i][r] = lnormAloc[r][piv_i];
                 lnormAloc[piv_j][r] = lnormAloc[r][piv_j];
             }
         }
         temp = lnormAloc[piv_i][piv_i];
-        lnormAloc[piv_i][piv_i] = pow(c,2)*lnormAloc[piv_i][piv_i] + pow(s,2)*lnormAloc[piv_j][piv_j] - 2*s*c*lnormAloc[piv_i][piv_j];
+        printf("%f,%f,%f\n",lnormAloc[piv_i][piv_i],lnormAloc[piv_j][piv_j],lnormAloc[piv_i][piv_j]);
+        
+        lnormAloc[piv_i][piv_i] = pow(c,2)*temp + pow(s,2)*lnormAloc[piv_j][piv_j] - 2*s*c*lnormAloc[piv_i][piv_j];
         lnormAloc[piv_j][piv_j] = pow(s,2)*temp + pow(c,2)*lnormAloc[piv_j][piv_j] + 2*s*c*lnormAloc[piv_i][piv_j];
         lnormAloc[piv_i][piv_j] = 0;
         lnormAloc[piv_j][piv_i] = 0;
-
+        printf("%f,%f,%f\n",lnormAloc[piv_i][piv_i],lnormAloc[piv_j][piv_j],lnormAloc[piv_i][piv_j]);
+        
+        /*Initialize P*/
+        initPAloc(s, c, piv_i, piv_j, PAloc);
+        
         /*Update V*/
         MatMulti(VAloc,PAloc,resAloc);
         tempMat = VAloc;
@@ -511,9 +541,9 @@ void jacobiInit(){
         resAloc = tempMat;
         res = tempmat;
 
-        /*Checking Convergence*/
+        /*Checking Convergence*/         
         off_after = offMat(lnormAloc);
-        if( (off_prev - off_after) < eps){break;}
+        if( (off_prev - off_after) <= eps){break;}
         off_prev = off_after;
     }
 
@@ -682,18 +712,6 @@ void spk() {
     free(U);free(UAloc);
 }
 
-/*Prints Functions for Arrays and Matrix*/
-void print_output(double** mat,int r,int c){
-    int i,j;
-    for(i=0; i<r ;i++){
-        for(j=0; j<c; j++){
-            /*Not Last Column*/
-            if(j<c-1){printf("%.4f,",mat[i][j]);}
-            else    {printf("%.4f",mat[i][j]);}
-        }
-        printf("%s","\n");
-    }
-}
 
 void print_outputV(double** mat,int r,int c){
     int i,j;
