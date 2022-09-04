@@ -1,9 +1,16 @@
+#define PY_SSIZE_T_CLEAN
+
 #include <Python.h>
 #include "spkmeans.h"
-
+#include <stdio.h>
+#include <math.h>
+#include <string.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <limits.h>
+#include <float.h>
 
 /*Python Objects*/
-PyObject* data_arr;
 PyObject* centroid_arr;
 PyObject* pyCentroids;
 PyObject* pyT;
@@ -84,7 +91,7 @@ static PyObject* wamC(PyObject* self, PyObject* args){
     print_output(wamAloc);
     free(wam);
     free(wamAloc);
-    return 0;
+    Py_RETURN_NONE;
 }
 
 static PyObject* ddgC(PyObject* self, PyObject* args){
@@ -97,7 +104,7 @@ static PyObject* ddgC(PyObject* self, PyObject* args){
     print_output(ddgAloc);
     free(ddg);
     free(ddgAloc);
-    return 0;
+    Py_RETURN_NONE;
 }
 
 static PyObject* lnormC(PyObject* self, PyObject* args){
@@ -112,7 +119,7 @@ static PyObject* lnormC(PyObject* self, PyObject* args){
     print_output(lnormAloc);
     free(lnorm);
     free(lnormAloc);
-    return 0;
+    Py_RETURN_NONE;
 }
 
 static PyObject* jacobiC(PyObject* self,PyObject* args){
@@ -120,17 +127,14 @@ static PyObject* jacobiC(PyObject* self,PyObject* args){
         return NULL;
     }
     read_file();
-    wamInit();
-    ddgInit();
-    read_file();
-    lnormInit();
+    lnormAloc = dataAloc;
     jacobiInit();
     print_outputArr(EigenValues,n);
     print_outputV(VAloc,n,n);
     free(EigenValues);
     free(indexs);
     free(V);free(VAloc);
-    return 0;
+    Py_RETURN_NONE;
     }
 
 /* declaring the kmeans function */

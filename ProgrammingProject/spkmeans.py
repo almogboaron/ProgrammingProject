@@ -14,16 +14,16 @@ class Goal(enum.Enum):
     jacobi = 5
 
 # Kmeans++ Func for (include kmeans through C)
-def kmeans(matrix):
+def kmeans(matrix,K):
     # kmeans++ implementation
     matrix = np.matrix(matrix)
-    centroids = np.zeros(shape=(matrix.shape[1], matrix.shape[1]))
+    centroids = np.zeros(shape=(K, matrix.shape[1]))
     idx = np.random.choice(matrix.shape[0])  # choosing random row index
     centroids[0] = matrix[idx]
     lst_Indexes = [i for i in range(matrix.shape[0])]
     lst_choice = [idx]
     distances = np.full(matrix.shape[0], sys.float_info.max)
-    for i in range(1, matrix.shape[1]):
+    for i in range(1, K):
         for l in range(matrix.shape[0]):
             for j in range(0, i):
                 distances[l] = min(distances[l], (np.linalg.norm(matrix[l] - centroids[j])) ** 2)
@@ -37,7 +37,7 @@ def kmeans(matrix):
     # Organizing Data for C function
     centroids = centroids.tolist()
 
-    # Datalist,CentroidList
+    # CentroidList
     new_Centroids = spkmeansmodule.fit(centroids)
 
     # toString
@@ -73,7 +73,7 @@ def main(arr):
     # Cases Functions
     if goal.value == 1:
         U = spkmeansmodule.spkC(file_name, K)
-        kmeans(U)
+        kmeans(U,K)
 
     elif goal.value == 2:
         spkmeansmodule.wamC(file_name)
@@ -85,7 +85,7 @@ def main(arr):
         spkmeansmodule.lnormC(file_name)
 
     elif goal.value == 5:
-        spkmeansmodule.jacobi(file_name)
+        spkmeansmodule.jacobiC(file_name)
 
 
 if __name__ == "__main__":
