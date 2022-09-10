@@ -41,13 +41,13 @@ void Init_Centroids(){
 }
 
 /*Create PyCentroids matrix*/
-static PyObject* cMatToPy(double** mat, int rows){
+static PyObject* cMatToPy(double** mat, int rows, int col){
     int i;
     int j;
     PyObject* pyMat = PyList_New(0);
     for(i=0;i<rows;i++){
         PyObject* PyPoint = PyList_New(0);
-        for(j=0;j<rows;j++){
+        for(j=0;j<col;j++){
             if(PyList_Append(PyPoint,PyFloat_FromDouble(mat[i][j]))==-1){
                 return NULL;
             }
@@ -64,6 +64,7 @@ static PyObject* fit(PyObject* Py_UNUSED(self), PyObject* args){
     if (!PyArg_ParseTuple(args,"O!",&PyList_Type, &centroid_arr)){
         return NULL;
     }
+    d = K;
     Init_Centroids();
     kmeans();
     pyCentroids = cMatToPy(CenetroidAloc,K);
