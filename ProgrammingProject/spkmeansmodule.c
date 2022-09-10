@@ -1,5 +1,4 @@
 #define PY_SSIZE_T_CLEAN
-
 #include <Python.h>
 #include "spkmeans.h"
 #include <stdio.h>
@@ -10,44 +9,45 @@
 #include <limits.h>
 #include <float.h>
 
+
 /*Python Objects*/
 PyObject* centroid_arr;
 PyObject* pyCentroids;
 PyObject* pyT;
 
 #define assert__(x) for (;!(x);assert(x))
-/*Function Initalizeation Centroids -> Matrix Formation as first k data points */
+/*Function Initialization Centroids -> Matrix Formation as first k data points */
 void Init_Centroids(){
     int i;
     int j;
-    Centroids = calloc(K*d,sizeof(double));
+    Centroids = calloc(K*K,sizeof(double));
     assert__(Centroids!=NULL){
         printf("An Error Has Occurred");
     }
-    CenetroidAloc = calloc(K,sizeof(double));
+    CenetroidAloc = calloc(K,sizeof(double*));
     assert__(CenetroidAloc!=NULL){
         printf("An Error Has Occurred");
     }
     /*Initializing Centroids Mat*/
     for(i=0;i<K;i++){
-        for(j=0;j<d;j++){
+        for(j=0;j<K;j++){
             Centroids[i*d+j] = PyFloat_AsDouble(PyList_GetItem(PyList_GetItem(centroid_arr,i),j));
         }
     }
     /*Initializing Pointer to Centroids Mat (k*d)*/
     for(i=0; i < K ; i++){
-        CenetroidAloc[i] = Centroids + i*d ;
+        CenetroidAloc[i] = Centroids + i*K ;
     }
 }
 
 /*Create PyCentroids matrix*/
-static PyObject* cMatToPy(double** mat, int rows, int col){
+static PyObject* cMatToPy(double** mat, int rows, int cols){
     int i;
     int j;
     PyObject* pyMat = PyList_New(0);
     for(i=0;i<rows;i++){
         PyObject* PyPoint = PyList_New(0);
-        for(j=0;j<col;j++){
+        for(j=0;j<cols;j++){
             if(PyList_Append(PyPoint,PyFloat_FromDouble(mat[i][j]))==-1){
                 return NULL;
             }
@@ -60,56 +60,55 @@ static PyObject* cMatToPy(double** mat, int rows, int col){
 }
 
 static PyObject* fit(PyObject* Py_UNUSED(self), PyObject* args){
-    /* data and initial centroinds*/
+    /* data and initial centroids*/
     if (!PyArg_ParseTuple(args,"O!",&PyList_Type, &centroid_arr)){
         return NULL;
     }
     d = K;
     Init_Centroids();
     kmeans();
-    pyCentroids = cMatToPy(CenetroidAloc,K);
+    pyCentroids = cMatToPy(CenetroidAloc,K,K);
     free(Centroids);
     free(CenetroidAloc);
     return pyCentroids;
 }
 
 static PyObject* spkC(PyObject* self, PyObject* args){
-    if(!PyArg_ParseTuple(args,"Oi",&filename,&K)){
+    if(!PyArg_ParseTuple(args,"si",&filename,&K)){
         return NULL;
     }
     spk();
-    pyT = cMatToPy(TAloc,n);
-    free(T);free(TAloc);
+    pyT = cMatToPy(TAloc,n,K);
     return pyT;
 }
 
 static PyObject* wamC(PyObject* self, PyObject* args){
-    if(!PyArg_ParseTuple(args,"O",&filename)){
+    if(!PyArg_ParseTuple(args,"s",&filename)){
         return NULL;
     }
     read_file();
     wamInit();
-    print_output(wamAloc);
+    print_output(wamAloc,n,n);
     free(wam);
     free(wamAloc);
     Py_RETURN_NONE;
 }
 
 static PyObject* ddgC(PyObject* self, PyObject* args){
-    if(!PyArg_ParseTuple(args,"O",&filename)){
+    if(!PyArg_ParseTuple(args,"s",&filename)){
         return NULL;
     }
     read_file();
     wamInit();
     ddgInit();
-    print_output(ddgAloc);
+    print_output(ddgAloc,n,n);
     free(ddg);
     free(ddgAloc);
     Py_RETURN_NONE;
 }
 
 static PyObject* lnormC(PyObject* self, PyObject* args){
-    if(!PyArg_ParseTuple(args,"O",&filename)){
+    if(!PyArg_ParseTuple(args,"s",&filename)){
         return NULL;
     }
     read_file();
@@ -117,26 +116,26 @@ static PyObject* lnormC(PyObject* self, PyObject* args){
     ddgInit();
     read_file();
     lnormInit();
-    print_output(lnormAloc);
+    print_output(lnormAloc,n,n);
     free(lnorm);
     free(lnormAloc);
     Py_RETURN_NONE;
 }
 
 static PyObject* jacobiC(PyObject* self,PyObject* args){
-    if(!PyArg_ParseTuple(args,"O",&filename)){
+    if(!PyArg_ParseTuple(args,"s",&filename)){
         return NULL;
     }
     read_file();
     lnormAloc = dataAloc;
     jacobiInit();
     print_outputArr(EigenValues,n);
-    print_outputV(VAloc,n,n);
+    print_output(VAloc,n,n);
     free(EigenValues);
     free(indexs);
     free(V);free(VAloc);
     Py_RETURN_NONE;
-    }
+}
 
 /* declaring the kmeans function */
 static PyMethodDef capiMethods[] = {

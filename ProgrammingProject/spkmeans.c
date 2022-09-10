@@ -64,9 +64,9 @@ int* indexes;
 #define assert__(x) for (;!(x);assert(x))
 
 /* -------------------------------- Handling Data ------------------- */
-double MAX(double x,double y){ 
-  return (x >= y) ? x : y;
-  }
+double MAX(double x,double y){
+    return (x >= y) ? x : y;
+}
 
 /*Prints Functions for Arrays and Matrix*/
 void print_output(double** mat,int r,int c){
@@ -268,7 +268,7 @@ void wamInit(){
     assert__(wamAloc!=NULL){
         printf("An Error Has Occurred");
     }
-    
+
     for(i=0;i<n;i++){
         wamAloc[i] = wam + i*n;
     }
@@ -306,7 +306,6 @@ void ddgInit(){
             ddgAloc[i][i] += wamAloc[i][z];
         }
     }
-
 }
 
 /*---------------The Normalized Graph Laplacian---------*/
@@ -372,7 +371,7 @@ void lnormInit(){
     MatSubEye(lnormAloc);
     free(res);free(resAloc);
     free(ddg);free(ddgAloc);
-    free(wamAloc);free(wam);
+    free(wam);free(wamAloc);
 }
 
 /*---------------Jacobi Algorithem---------*/
@@ -387,7 +386,7 @@ void initPAloc(double s,double c, int piv_i , int piv_j, double** PAloc){
             }else{
                 PAloc[i][j]=0;
             }
-        } 
+        }
     }
     PAloc[piv_i][piv_i] = c;
     PAloc[piv_j][piv_j] = c;
@@ -420,12 +419,12 @@ double offMat(double** mat){
 
 /*Compare function - Reversed*/
 int cmpfuncindex (const void * a, const void * b) {
-   return ( EigenValues[*(int*)b] - EigenValues[*(int*)a] );
+    return ( EigenValues[*(int*)b] - EigenValues[*(int*)a] );
 }
 
 /*Compare function - Reversed*/
 int cmpfunc (const void * a, const void * b) {
-   return ( *(double*)b - *(double*)a );
+    return ( *(double*)b - *(double*)a );
 }
 
 /*Eigengap Heuristic*/
@@ -433,10 +432,10 @@ void EigengapHeuristic(){
     double sigma;
     int i;
     double max = -DBL_MAX;
-    
+
 /*Finidng k*/
     for(i=0; i<floor(n/2);i++){
-        sigma = fabs(EigenValues[i]-EigenValues[i+1]);
+        sigma = abs(EigenValues[i]-EigenValues[i+1]);
         if(max < sigma){
             max = sigma;
             K = i+1;  /*Could Be A BUG************************/
@@ -446,7 +445,7 @@ void EigengapHeuristic(){
 
 /*Jacobi Main Function - Creates V*/
 void jacobiInit(){
-    int k,r,i,piv_i,j,piv_j;
+    int k,r,i,piv_i=0,j,piv_j=0;
     double teta, t, s, c, temp, maxVal, off_prev,off_after, *P, **PAloc, *res, **resAloc, *tempmat, **tempMat;
 
     /* Creating mat*/
@@ -479,11 +478,10 @@ void jacobiInit(){
         VAloc[i] = V +i*n;
         VAloc[i][i] = 1;
         resAloc[i] = res +i*n;
-        resAloc[i][i] = 1;
     }
-    
+
     off_prev = offMat(lnormAloc);
-    
+
     /*Diagonalization*/
     for(k=0;k<100;k++){
         /*Pivot*/
@@ -491,25 +489,21 @@ void jacobiInit(){
         for(i=0;i<n;i++){
             for(j=0;j<i;j++){
                 if(MAX(maxVal,fabs(lnormAloc[i][j]))==fabs(lnormAloc[i][j])){
-                    piv_i = i; 
+                    piv_i = i;
                     piv_j = j;
                     maxVal = fabs(lnormAloc[i][j]);
                 }
             }
         }
-        
-        printf("maxVal %f",maxVal);
-        printf("piv_i = %d, piv_j = %d\n",piv_i,piv_j);
-        printf("lnormIter%d before change\n\n",k);
-        print_output(lnormAloc,n,n);
+
 
         /*c And s*/
         teta = (lnormAloc[piv_j][piv_j]-lnormAloc[piv_i][piv_i])/(2*lnormAloc[piv_i][piv_j]);
-        t = sign(teta)/(fabs(teta) + sqrt(pow(teta,2)+1)); 
+        t = sign(teta)/(fabs(teta) + sqrt(pow(teta,2)+1));
         c = 1/sqrt(pow(t,2)+1);
         s = c*t;
-        printf("teta %f,t %f,c %f,s %f\n",teta,t,c,s);
-      
+
+
         /*Transform lnorm | Temp used here to avoid overiding*/
         for(r=0;r<n;r++){
             if((r!=piv_i)&&(r!=piv_j)){
@@ -521,18 +515,20 @@ void jacobiInit(){
             }
         }
         temp = lnormAloc[piv_i][piv_i];
-        printf("%f,%f,%f\n",lnormAloc[piv_i][piv_i],lnormAloc[piv_j][piv_j],lnormAloc[piv_i][piv_j]);
-        
+
+
         lnormAloc[piv_i][piv_i] = pow(c,2)*temp + pow(s,2)*lnormAloc[piv_j][piv_j] - 2*s*c*lnormAloc[piv_i][piv_j];
         lnormAloc[piv_j][piv_j] = pow(s,2)*temp + pow(c,2)*lnormAloc[piv_j][piv_j] + 2*s*c*lnormAloc[piv_i][piv_j];
         lnormAloc[piv_i][piv_j] = 0;
         lnormAloc[piv_j][piv_i] = 0;
-        printf("%f,%f,%f\n",lnormAloc[piv_i][piv_i],lnormAloc[piv_j][piv_j],lnormAloc[piv_i][piv_j]);
-        
+
+
+
         /*Initialize P*/
         initPAloc(s, c, piv_i, piv_j, PAloc);
-        
+
         /*Update V*/
+
         MatMulti(VAloc,PAloc,resAloc);
         tempMat = VAloc;
         tempmat = V;
@@ -541,7 +537,7 @@ void jacobiInit(){
         resAloc = tempMat;
         res = tempmat;
 
-        /*Checking Convergence*/         
+        /*Checking Convergence*/
         off_after = offMat(lnormAloc);
         if( (off_prev - off_after) <= eps){break;}
         off_prev = off_after;
@@ -556,7 +552,7 @@ void jacobiInit(){
     assert__(EigenValues!=NULL){
         printf("An Error Has Occurred");
     }
-    
+
     /*Initializing*/
     for(i=0;i<n;i++){
         EigenValues[i] = lnormAloc[i][i];
@@ -589,7 +585,7 @@ void kmeans() {
     assert__(ClusterSum!=NULL){
         printf("An Error Has Occurred");
     }
-    ClusterSumAloc = calloc(K,sizeof(double));
+    ClusterSumAloc = calloc(K,sizeof(double*));
     assert__(ClusterSumAloc!=NULL){
         printf("An Error Has Occurred");
     }
@@ -609,7 +605,7 @@ void kmeans() {
 
         /*Assigning Data to clustersSum.*/
         for(i=0; i < n; i++){
-            idx = assign(dataAloc[i]);
+            idx = assign(TAloc[i]);
             count[idx] += 1;
         }
         /*Normalize Cluster*/
@@ -629,26 +625,24 @@ void kmeans() {
     }
 
 /*Free Memory*/
-free(ClusterSum);
-free(ClusterSumAloc);
-free(data);
-free(dataAloc);
-free(count);
+    free(ClusterSum);
+    free(ClusterSumAloc);
+    free(count);
+    free(T);free(TAloc);
 }
 
-/*spk Implemntation for Python*/
+/*spk Implementation for Python*/
 void spk() {
     int i,j;
     double norma;
 
-    /*getting the data from the file*/
     read_file();
-    
+
     /*Asserts*/
     assert__(K<=n){
         printf("Invalid Input!");
     }
-    
+
     /*step 1*/
     wamInit();
 
@@ -672,16 +666,16 @@ void spk() {
     for(i=0;i<n;i++){
         UAloc[i] = U +i*K;
     }
-    
+
     /*Initialize choesen EigenVectors by indexes*/
     for(i=0;i<n;i++){
         for(j=0;j<K;j++){
-            UAloc[i][j] = VAloc[i][indexes[j]]; 
+            UAloc[i][j] = VAloc[i][indexes[j]];
         }
     }
     free(indexes);
     free(V);free(VAloc);
-    
+
 
     /*Normaliazing*/
     T = calloc(n*K,sizeof(double));
@@ -695,7 +689,7 @@ void spk() {
     for(i=0;i<n;i++){
         TAloc[i] = T +i*K;
     }
-    
+
     /*Norma Function*/
     for(i=0;i<n;i++){
         norma =0;
@@ -703,6 +697,7 @@ void spk() {
             norma+=pow(UAloc[i][j],2);
         }
         norma = sqrt(norma);
+        if (norma == 0){continue;}
         for(j=0;j<K;j++){
             TAloc[i][j] = UAloc[i][j]/norma;
         }
@@ -760,6 +755,7 @@ int main(int argc, char *argv[]) {
         free(lnorm);free(lnormAloc);
     }
     else if(strcmp(argv[1],"jacobi")==0){
+
         lnormAloc = dataAloc;
         jacobiInit();
         print_outputArr(EigenValues,n);
