@@ -230,13 +230,13 @@ void NormelizeClusterSums(int* counter){
 }
 
 /*Update Centroinds, Resets Cluster  And returns the EuclidianDistance.*/
-double update_centroid(double* Centroid , double* ClusterSum){
+double update_centroid(double* Centroid , double* ClusterSum_i){
     double norm=0;
     int i;
     for(i=0; i<d; i++){
-        norm +=pow(Centroid[i] - ClusterSum[i],2);
-        Centroid[i] = ClusterSum[i];
-        ClusterSum[i] = 0;
+        norm +=pow(Centroid[i] - ClusterSum_i[i],2);
+        Centroid[i] = ClusterSum_i[i];
+        ClusterSum_i[i] = 0;
     }
     return sqrt(norm);
 }
@@ -435,7 +435,7 @@ void EigengapHeuristic(){
 
 /*Finidng k*/
     for(i=0; i<floor(n/2);i++){
-        sigma = abs(EigenValues[i]-EigenValues[i+1]);
+        sigma = fabs(EigenValues[i]-EigenValues[i+1]);
         if(max < sigma){
             max = sigma;
             K = i+1;  /*Could Be A BUG************************/
@@ -544,10 +544,7 @@ void jacobiInit(){
     }
 
     /*Sorting EigenValues and indexes for matrix U*/
-    indexes = calloc(n,sizeof(int));
-    assert__(indexes!=NULL){
-        printf("An Error Has Occurred");
-    }
+
     EigenValues = calloc(n,sizeof(double));
     assert__(EigenValues!=NULL){
         printf("An Error Has Occurred");
@@ -556,17 +553,9 @@ void jacobiInit(){
     /*Initializing*/
     for(i=0;i<n;i++){
         EigenValues[i] = lnormAloc[i][i];
-        indexes[i] = i;
     }
 
-    /*Sorting indexes and values*/
-    qsort(indexes, n, sizeof(int), cmpfuncindex);
-    qsort(EigenValues,n,sizeof(double),cmpfunc);
 
-    /*EigengapHeuristic*/
-    if(K == 0){
-        EigengapHeuristic();
-    }
     free(P);free(PAloc);
     free(res);free(resAloc);
     free(lnorm);free(lnormAloc);
@@ -631,10 +620,26 @@ void kmeans() {
     free(T);free(TAloc);
 }
 
+void print_outputArr(double* arr,int r){
+    int i;
+    for(i=0; i<r; i++){
+        if(i<r-1){printf("%.4f,",arr[i]);}
+        else    {printf("%.4f\n",arr[i]);}
+    }
+}
+
+void swap(double* x, double* y){
+    double tmp = *x;
+    *x = *y;
+    *y = tmp;
+}
+
 /*spk Implementation for Python*/
 void spk() {
-    int i,j;
+    int i,j,tmpidx;
     double norma;
+    double* tmp;
+
 
     read_file();
 
@@ -653,6 +658,43 @@ void spk() {
     /*step 3*/
     jacobiInit();
 
+    /*Sorting indexes and values*/
+    /*qsort(indexes, n, sizeof(int), cmpfuncindex);
+    qsort(EigenValues,n,sizeof(double),cmpfunc);*/
+    indexes = calloc(n,sizeof(int));
+    assert__(indexes!=NULL){
+        printf("An Error Has Occurred");
+    }
+    tmp = calloc(n,sizeof(double));
+    assert__(indexes!=NULL){
+        printf("An Error Has Occurred");
+    }
+    for(i=0;i<n;i++){
+        tmp[i] = EigenValues[i];
+    }
+
+    for(i=0;i<n-1;i++){
+        tmpidx = i;
+        for(j=i+1;j<n;j++){
+            if(tmp[j]>tmp[tmpidx]){
+                tmpidx = j;
+            }
+        }
+        swap(&tmp[i],&tmp[tmpidx]);
+    }
+    for(i=0;i<n;i++){
+        for(j=0;j<n;j++){
+            if(tmp[i] == EigenValues[j]){
+                indexes[i] = j;
+            }
+        }
+    }
+
+    /*EigengapHeuristic*/
+    if(K == 0){
+        EigengapHeuristic();
+    }
+
     /*step 4 - renormalize U's rows - NEED TO ADD*/
     U = calloc(n*K,sizeof(double));
     assert__(U!=NULL){
@@ -667,14 +709,13 @@ void spk() {
         UAloc[i] = U +i*K;
     }
 
-    /*Initialize choesen EigenVectors by indexes*/
+    /*Initialize chosen EigenVectors by indexes*/
     for(i=0;i<n;i++){
         for(j=0;j<K;j++){
             UAloc[i][j] = VAloc[i][indexes[j]];
         }
     }
-    free(indexes);
-    free(V);free(VAloc);
+
 
 
     /*Normaliazing*/
@@ -708,25 +749,8 @@ void spk() {
 }
 
 
-void print_outputV(double** mat,int r,int c){
-    int i,j;
-    for(i=0; i<r ;i++){
-        for(j=0; j<c; j++){
-            /*Take the Index of the currect EigenValue*/
-            if(j<c-1){printf("%.4f,",mat[i][indexes[j]]);}
-            else    {printf("%.4f",mat[i][indexes[j]]);}
-        }
-        printf("%s","\n");
-    }
-}
 
-void print_outputArr(double* arr,int r){
-    int i;
-    for(i=0; i<r; i++){
-        if(i<r-1){printf("%.4f,",arr[i]);}
-        else    {printf("%.4f\n",arr[i]);}
-    }
-}
+
 
 /*Main Function for C*/
 int main(int argc, char *argv[]) {
@@ -759,7 +783,7 @@ int main(int argc, char *argv[]) {
         lnormAloc = dataAloc;
         jacobiInit();
         print_outputArr(EigenValues,n);
-        print_outputV(VAloc,n,n);
+        print_output(VAloc,n,n);
         free(EigenValues);
         free(indexes);
         free(V);free(VAloc);

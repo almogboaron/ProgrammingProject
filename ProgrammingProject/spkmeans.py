@@ -14,9 +14,10 @@ class Goal(enum.Enum):
     jacobi = 5
 
 # Kmeans++ Func for (include kmeans through C)
-def kmeans(matrix,K):
+def kmeans(matrix):
     # kmeans++ implementation
     matrix = np.matrix(matrix)
+    K = matrix.shape[1]
     centroids = np.zeros(shape=(K, matrix.shape[1]))
     idx = np.random.choice(matrix.shape[0])  # choosing random row index
     centroids[0] = matrix[idx]
@@ -73,7 +74,7 @@ def main(arr):
     # Cases Functions
     if goal.value == 1:
         U = spkmeansmodule.spkC(file_name, K)
-        kmeans(U,K)
+        kmeans(U)
 
     elif goal.value == 2:
         spkmeansmodule.wamC(file_name)
