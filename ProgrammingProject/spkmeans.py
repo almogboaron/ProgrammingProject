@@ -45,8 +45,8 @@ def kmeans(matrix):
     result = str(lst_choice).strip("[]").replace(" ", "") + "\n"
     for m in new_Centroids:
         for i in range(len(m)):
-            m[i] = float("{:.4f}".format(m[i]))
-        result += str(m).strip("[]").replace(" ", "") + "\n"
+            m[i] = "{:.4f}".format(m[i])
+        result += str(m).strip("[]").replace(" ", "").replace("'","") + "\n"
     print(result)
 
 # Main Func
