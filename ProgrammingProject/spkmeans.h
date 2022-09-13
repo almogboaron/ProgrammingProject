@@ -12,17 +12,19 @@ double** lnormAloc;
 double* V;
 double** VAloc;
 double* EigenValues;
-int* indexs;
+int* indexes;
 int n;
 double* Centroids;
 double** CenetroidAloc;
 double* T;
 double** TAloc;
 int d;
-
+double* data;
+double** dataAloc;
 
 
 /*functions*/
+
 void read_file();
 void wamInit();
 void print_output();
@@ -31,5 +33,5 @@ void print_outputArr();
 void ddgInit();
 void lnormInit();
 void jacobiInit();
-PyObject* kmeans();
-PyObject* spk();
+void kmeans();
+void spk();
