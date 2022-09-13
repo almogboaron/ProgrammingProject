@@ -6,7 +6,7 @@ setup(
     install_requires=["invoke"],
     packages=find_packages(),
     ext_modules=[
-        ## (name of module, [name of c file])
-        Extension("spkmeansmodule",["spkmeansmodule.c"])
+        ## (name of module, [name of c file])'
+        Extension("spkmeansmodule",["spkmeansmodule.c","spkmeans.c"])
     ]
 )
