@@ -676,15 +676,15 @@ void spk() {
     for(i=0;i<n-1;i++){
         tmpidx = i;
         for(j=i+1;j<n;j++){
-            if(tmp[j]>tmp[tmpidx]){
+            if(EigenValues[j]>EigenValues[tmpidx]){
                 tmpidx = j;
             }
         }
-        swap(&tmp[i],&tmp[tmpidx]);
+        swap(&EigenValues[i],&EigenValues[tmpidx]);
     }
     for(i=0;i<n;i++){
         for(j=0;j<n;j++){
-            if(tmp[i] == EigenValues[j]){
+            if(EigenValues[i] == tmp[j]){
                 indexes[i] = j;
             }
         }
