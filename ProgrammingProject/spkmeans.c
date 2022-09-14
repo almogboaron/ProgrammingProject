@@ -417,16 +417,6 @@ double offMat(double** mat){
     return sum;
 }
 
-/*Compare function - Reversed*/
-int cmpfuncindex (const void * a, const void * b) {
-    return ( EigenValues[*(int*)b] - EigenValues[*(int*)a] );
-}
-
-/*Compare function - Reversed*/
-int cmpfunc (const void * a, const void * b) {
-    return ( *(double*)b - *(double*)a );
-}
-
 /*Eigengap Heuristic*/
 void EigengapHeuristic(){
     double sigma;
@@ -746,6 +736,7 @@ void spk() {
 
     /*step 5 - passing the data back to python*/
     free(U);free(UAloc);
+    free(indexes);free(tmp);
 }
 
 
@@ -769,6 +760,7 @@ int main(int argc, char *argv[]) {
         wamInit();
         ddgInit();
         print_output(ddgAloc,n,n);
+        free(wam);free(wamAloc);
         free(ddg);free(ddgAloc);
     }
     else if(strcmp(argv[1],"lnorm") == 0){
@@ -785,8 +777,8 @@ int main(int argc, char *argv[]) {
         print_outputArr(EigenValues,n);
         print_output(VAloc,n,n);
         free(EigenValues);
-        free(indexes);
         free(V);free(VAloc);
+        free(data);free(dataAloc);
     }
     else{printf("Invalid Input!");}
     return 0;

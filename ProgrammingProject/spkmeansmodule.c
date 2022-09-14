@@ -102,8 +102,8 @@ static PyObject* ddgC(PyObject* self, PyObject* args){
     wamInit();
     ddgInit();
     print_output(ddgAloc,n,n);
-    free(ddg);
-    free(ddgAloc);
+    free(wam);free(wamAloc);
+    free(ddg);free(ddgAloc);
     Py_RETURN_NONE;
 }
 
@@ -132,7 +132,6 @@ static PyObject* jacobiC(PyObject* self,PyObject* args){
     print_outputArr(EigenValues,n);
     print_output(VAloc,n,n);
     free(EigenValues);
-    free(indexs);
     free(V);free(VAloc);
     Py_RETURN_NONE;
 }
