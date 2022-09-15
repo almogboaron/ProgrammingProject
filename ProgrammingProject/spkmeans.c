@@ -476,8 +476,8 @@ void jacobiInit(){
     for(k=0;k<100;k++){
         /*Pivot*/
         maxVal = -DBL_MAX;
-        for(i=0;i<n;i++){
-            for(j=0;j<i;j++){
+        for(j=0;j<n;j++){
+            for(i=0;i<j;i++){
                 if(MAX(maxVal,fabs(lnormAloc[i][j]))==fabs(lnormAloc[i][j])){
                     piv_i = i;
                     piv_j = j;
@@ -544,7 +544,6 @@ void jacobiInit(){
     for(i=0;i<n;i++){
         EigenValues[i] = lnormAloc[i][i];
     }
-
 
     free(P);free(PAloc);
     free(res);free(resAloc);
