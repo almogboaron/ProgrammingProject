@@ -130,7 +130,7 @@ static PyObject* jacobiC(PyObject* self,PyObject* args){
     jacobiInit();
     print_outputArr(EigenValues,n);
     print_output(VAloc,n,n);
-    free(data);free(dataAloc);
+    free(data);
     free(EigenValues);
     free(V);free(VAloc);
     Py_RETURN_NONE;
