@@ -114,7 +114,6 @@ static PyObject* lnormC(PyObject* self, PyObject* args){
     read_file();
     wamInit();
     ddgInit();
-    read_file();
     lnormInit();
     print_output(lnormAloc,n,n);
     free(lnorm);
@@ -131,6 +130,7 @@ static PyObject* jacobiC(PyObject* self,PyObject* args){
     jacobiInit();
     print_outputArr(EigenValues,n);
     print_output(VAloc,n,n);
+    free(data);free(dataAloc);
     free(EigenValues);
     free(V);free(VAloc);
     Py_RETURN_NONE;

@@ -704,6 +704,7 @@ void spk() {
             UAloc[i][j] = VAloc[i][indexes[j]];
         }
     }
+    free(V);free(VAloc);
 
 
 
@@ -736,9 +737,8 @@ void spk() {
     /*step 5 - passing the data back to python*/
     free(U);free(UAloc);
     free(indexes);free(tmp);
+    free(EigenValues);
 }
-
-
 
 
 
